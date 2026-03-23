@@ -1,16 +1,1 @@
-{
-  "routes": [
-    {
-      "route": "/*",
-      "serve": "/index.html",
-      "statusCode": 200
-    }
-  ],
-  "navigationFallback": {
-    "rewrite": "/index.html"
-  },
-  "mimeTypes": {
-    ".json": "text/json",
-    ".wasm": "application/wasm"
-  }
-}
+{"routes":[{"route":"/*","serve":"/index.html","statusCode":200}],"navigationFallback":{"rewrite":"/index.html"},"mimeTypes":{".json":"text/json",".wasm":"application/wasm"},"auth":{"rolesSource":"https://salmon-island-0da59d40f.2.azurestaticapps.net/api/GetRoles","identityProviders":{"google":{"registration":{"clientIdSettingName":"GOOGLE_CLIENT_ID","clientSecretSettingName":"GOOGLE_CLIENT_SECRET_APP_SETTING_NAME"}}}}}
