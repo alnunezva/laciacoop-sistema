@@ -59,7 +59,7 @@ function App() {
           Cerrar Sesión
         </button>
       </div>
-      
+      <p>Total de socios cargados: {socios.length}</p>
       <table style={{ width: '100%', marginTop: '20px', backgroundColor: 'white', borderRadius: '10px' }}>
         {/* Tu tabla de socios aquí igual que antes */}
       </table>
