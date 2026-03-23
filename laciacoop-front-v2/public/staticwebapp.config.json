@@ -1,5 +1,17 @@
 {
-  "navigationFallback": {
-    "rewrite": "/index.html"
+  "auth": {
+    "rolesSource": "/api/GetRoles"
+  },
+  "routes": [
+    {
+      "route": "/*",
+      "allowedRoles": ["authenticated"]
+    }
+  ],
+  "responseOverrides": {
+    "403": {
+      "rewrite": "/invalid-domain.html",
+      "statusCode": 403
+    }
   }
 }
