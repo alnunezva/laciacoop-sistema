@@ -4,8 +4,8 @@
     "identityProviders": {
       "google": {
         "registration": {
-          "clientIdSettingName": "404560188878-h5v0npcbrfsqf5r0esmq0vcufn5gcheb.apps.googleusercontent.com",
-          "clientSecretSettingName": "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"
+          "clientIdSettingName": "GOOGLE_CLIENT_ID",
+          "clientSecretSettingName": "GOOGLE_CLIENT_SECRET"
         }
       }
     }
