@@ -29,7 +29,24 @@ function App() {
       .catch(err => console.error("Error API:", err));
   }, []);
 
-  // --- FUNCIÓN PARA SUBIR ARCHIVOS ---
+  const handleGuardar = async (socioAActualizar = socioSeleccionado) => {
+    if (!socioAActualizar) return;
+    try {
+      const response = await fetch('/api/saveSocio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(socioAActualizar)
+      });
+      if (response.ok) {
+        setSocios(socios.map(s => s.id === socioAActualizar.id ? socioAActualizar : s));
+        return true;
+      }
+    } catch (error) {
+      console.error("Error al guardar:", error);
+      return false;
+    }
+  };
+
   const handleUpload = async (docType) => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -42,45 +59,51 @@ function App() {
       try {
         const response = await fetch(`/api/uploadDoc?socioId=${socioSeleccionado.id}&docType=${encodeURIComponent(docType)}&fileName=${encodeURIComponent(file.name)}`, {
           method: 'POST',
-          body: file // Envío directo del binario
+          body: file
         });
 
         if (response.ok) {
           const result = await response.json();
-          // Actualizar estado local del socio seleccionado
           const socioActualizado = { ...socioSeleccionado };
           if (!socioActualizado.documentos) socioActualizado.documentos = {};
           socioActualizado.documentos[docType] = { status: "Cargado", url: result.url };
 
-          setSocioSeleccionado(socioActualizado);
-          setSocios(socios.map(s => s.id === socioActualizado.id ? socioActualizado : s));
-          alert(`✅ ${docType} cargado correctamente.`);
-        } else {
-          alert("❌ Error al subir el archivo al servidor.");
+          const guardadoExitoso = await handleGuardar(socioActualizado);
+          if (guardadoExitoso) {
+            setSocioSeleccionado(socioActualizado);
+            alert(`✅ ${docType} cargado y vinculado.`);
+          }
         }
       } catch (error) {
-        alert("❌ Error de red al intentar subir el archivo.");
+        alert("❌ Error al subir el archivo.");
       }
     };
     input.click();
   };
 
-  const handleGuardar = async () => {
-    if (!socioSeleccionado) return;
+  const handleDelete = async (docType) => {
+    if (!window.confirm(`¿Está seguro de eliminar el documento: ${docType}?`)) return;
+
     try {
-      const response = await fetch('/api/saveSocio', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(socioSeleccionado)
+      const docInfo = socioSeleccionado.documentos[docType];
+      const fileName = docInfo.url.split('/').pop().split('_').slice(1).join('_');
+
+      const response = await fetch(`/api/deleteDoc?socioId=${socioSeleccionado.id}&docType=${encodeURIComponent(docType)}&fileName=${encodeURIComponent(fileName)}`, {
+        method: 'DELETE'
       });
+
       if (response.ok) {
-        alert("✅ Cambios guardados en la nube de LACIACOOP");
-        setSocios(socios.map(s => s.id === socioSeleccionado.id ? socioSeleccionado : s));
-      } else {
-        alert("❌ Error al guardar en el servidor");
+        const socioActualizado = { ...socioSeleccionado };
+        delete socioActualizado.documentos[docType];
+
+        const guardadoExitoso = await handleGuardar(socioActualizado);
+        if (guardadoExitoso) {
+          setSocioSeleccionado(socioActualizado);
+          alert("🗑️ Documento eliminado de la nube.");
+        }
       }
     } catch (error) {
-      alert("❌ Error de conexión al intentar guardar");
+      alert("❌ Error al intentar eliminar.");
     }
   };
 
@@ -208,7 +231,7 @@ function App() {
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                           <span style={{ fontSize: '14px', fontWeight: '500', color: '#334155' }}>{doc}</span>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span style={{ 
                             ...statusBadgeStyle, 
                             backgroundColor: status === "Cargado" ? '#dcfce7' : '#fee2e2',
@@ -216,13 +239,14 @@ function App() {
                           }}>
                             {status}
                           </span>
-                          <button 
-                            style={uploadIconStyle} 
-                            title="Subir documento"
-                            onClick={() => handleUpload(doc)} // Vínculo a la función de subida
-                          >
-                            📁
-                          </button>
+                          {status === "Cargado" ? (
+                            <>
+                              <button style={actionIconStyle} onClick={() => window.open(socioSeleccionado.documentos[doc].url, '_blank')} title="Ver documento">👁️</button>
+                              <button style={{...actionIconStyle, color: '#ef4444'}} onClick={() => handleDelete(doc)} title="Eliminar">🗑️</button>
+                            </>
+                          ) : (
+                            <button style={uploadIconStyle} onClick={() => handleUpload(doc)} title="Subir documento">📁</button>
+                          )}
                         </div>
                       </div>
                     );
@@ -244,7 +268,9 @@ function App() {
                   <p style={{ margin: '0', fontSize: '13px' }}><strong>Última Factibilidad:</strong> Emitida 12/03/2024</p>
                 </div>
 
-                <button style={saveButtonStyle} onClick={handleGuardar}>
+                <button style={saveButtonStyle} onClick={() => {
+                  handleGuardar().then(success => success && alert("✅ Cambios guardados en la nube de LACIACOOP"));
+                }}>
                   Guardar Cambios en Ficha
                 </button>
               </div>
@@ -287,6 +313,7 @@ const sectionHeaderStyle = { fontSize: '12px', color: '#94a3b8', fontWeight: '70
 const documentRowStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 15px', borderBottom: '1px solid #edf2f7' };
 const statusBadgeStyle = { padding: '5px 12px', borderRadius: '10px', fontSize: '11px', fontWeight: '800', textTransform: 'uppercase' };
 const uploadIconStyle = { background: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '6px', cursor: 'pointer', fontSize: '16px' };
+const actionIconStyle = { background: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '6px', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' };
 const textareaStyle = { width: '100%', height: '180px', borderRadius: '18px', border: '1px solid #e2e8f0', padding: '15px', fontSize: '14px', resize: 'none', backgroundColor: '#fcfcfc', outline: 'none' };
 const infoBoxStyle = { marginTop: '20px', padding: '20px', backgroundColor: '#eff6ff', borderRadius: '18px', color: '#1e40af', border: '1px solid #dbeafe' };
 const saveButtonStyle = { marginTop: '20px', width: '100%', padding: '18px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '18px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)' };
