@@ -1,47 +1,67 @@
 import React, { useEffect, useState } from 'react';
+import { useIdleTimer } from './useIdleTimer';
 
 function App() {
+  const [userInfo, setUserInfo] = useState(null);
   const [socios, setSocios] = useState([]);
 
+  // Función para cerrar sesión (Azure Logout)
+  const logout = () => {
+    window.location.href = "/.auth/logout?post_logout_redirect_uri=/";
+  };
+
+  // Activar el temporizador de 15 minutos
+  useIdleTimer(logout, 15 * 60 * 1000);
+
   useEffect(() => {
-    // IMPORTANTE: En Azure usamos ruta relativa '/api/getSocios'
-    fetch('/api/getSocios') 
+    // 1. Verificar si el usuario está logueado en Azure
+    fetch('/.auth/me')
       .then(res => res.json())
-      .then(data => setSocios(data))
-      .catch(err => console.error("Error cargando socios:", err));
+      .then(data => {
+        if (data.clientPrincipal) {
+          setUserInfo(data.clientPrincipal);
+        }
+      });
   }, []);
 
+  useEffect(() => {
+    if (userInfo) {
+      fetch('/api/getSocios')
+        .then(res => res.json())
+        .then(data => setSocios(data))
+        .catch(err => console.error("Error:", err));
+    }
+  }, [userInfo]);
+
+  // PANTALLA DE LOGIN (SSO GOOGLE)
+  if (!userInfo) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#1a365d' }}>
+        <h1 style={{ color: 'white' }}>🚜 LACIACOOP SISTEMA</h1>
+        <p style={{ color: '#bdc3c7' }}>Acceso exclusivo para personal autorizado</p>
+        <a href="/.auth/login/google" style={{
+          backgroundColor: 'white', padding: '15px 25px', borderRadius: '5px', 
+          textDecoration: 'none', color: '#1a365d', fontWeight: 'bold', display: 'flex', alignItems: 'center'
+        }}>
+          <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="G" style={{ width: '20px', marginRight: '10px' }} />
+          Iniciar sesión con Google Workspace
+        </a>
+      </div>
+    );
+  }
+
+  // PANTALLA DE LA TABLA (USUARIO LOGUEADO)
   return (
-    <div style={{ padding: '40px', fontFamily: 'Arial', backgroundColor: '#f0f2f5', minHeight: '100vh' }}>
-      <h1 style={{ color: '#1a365d' }}>🚜 Gestión de Socios LACIACOOP</h1>
-      <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-        <thead>
-          <tr style={{ backgroundColor: '#1a365d', color: 'white', textAlign: 'left' }}>
-            <th style={{ padding: '15px' }}>Nombre</th>
-            <th style={{ padding: '15px' }}>RUT</th>
-            <th style={{ padding: '15px' }}>Estado Cédula</th>
-          </tr>
-        </thead>
-        <tbody>
-          {socios.length > 0 ? socios.map(socio => (
-            <tr key={socio.id} style={{ borderBottom: '1px solid #ddd' }}>
-              <td style={{ padding: '15px' }}>{socio.nombre}</td>
-              <td style={{ padding: '15px' }}>{socio.rut}</td>
-              <td style={{ padding: '15px' }}>
-                <span style={{ 
-                  padding: '5px 10px', 
-                  borderRadius: '15px', 
-                  backgroundColor: socio.documentos?.cedula_identidad?.estado === 'Cargado' ? '#dcfce7' : '#fee2e2',
-                  color: socio.documentos?.cedula_identidad?.estado === 'Cargado' ? '#166534' : '#991b1b'
-                }}>
-                  {socio.documentos?.cedula_identidad?.estado || 'Pendiente'}
-                </span>
-              </td>
-            </tr>
-          )) : (
-            <tr><td colSpan="3" style={{ padding: '20px', textAlign: 'center' }}>Cargando datos del búnker...</td></tr>
-          )}
-        </tbody>
+    <div style={{ padding: '40px', backgroundColor: '#f0f2f5', minHeight: '100vh' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <h2>Bienvenido, {userInfo.userDetails} 🧑‍🌾</h2>
+        <button onClick={logout} style={{ backgroundColor: '#e74c3c', color: 'white', border: 'none', padding: '10px', borderRadius: '5px' }}>
+          Cerrar Sesión
+        </button>
+      </div>
+      
+      <table style={{ width: '100%', marginTop: '20px', backgroundColor: 'white', borderRadius: '10px' }}>
+        {/* Tu tabla de socios aquí igual que antes */}
       </table>
     </div>
   );
