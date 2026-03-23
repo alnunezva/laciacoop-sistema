@@ -6,7 +6,7 @@ module.exports = async function (context, req) {
     const admins = [
         "debora.fuenzalida@cooplacia.cl",
         "margarita.mendez@cooplacia.cl",
-        "alvaro.nunez@cooplacia.cl"
+        "anunez@cooplacia.cl"
     ];
 
     if (user && user.userDetails) {
