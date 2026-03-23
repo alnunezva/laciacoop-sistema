@@ -7,7 +7,6 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [socioSeleccionado, setSocioSeleccionado] = useState(null);
 
-  // Definición oficial de la carpeta documental
   const tiposDocumentos = [
     "Solicitud de incorporación", "Cédula de identidad", "Título de dominio",
     "Pago cuota de incorporación", "Pago cuota de participación", "Transferencias",
@@ -16,7 +15,6 @@ function App() {
   ];
 
   useEffect(() => {
-    // 1. Obtener sesión de Azure
     fetch('/.auth/me')
       .then(res => res.json())
       .then(data => {
@@ -25,14 +23,67 @@ function App() {
       })
       .catch(() => setLoading(false));
 
-    // 2. Obtener socios
     fetch('/api/getSocios')
       .then(res => res.json())
       .then(data => setSocios(Array.isArray(data) ? data : []))
       .catch(err => console.error("Error API:", err));
   }, []);
 
-  // Lógica de Filtrado
+  // --- FUNCIÓN PARA SUBIR ARCHIVOS ---
+  const handleUpload = async (docType) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf,image/*';
+
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      try {
+        const response = await fetch(`/api/uploadDoc?socioId=${socioSeleccionado.id}&docType=${encodeURIComponent(docType)}&fileName=${encodeURIComponent(file.name)}`, {
+          method: 'POST',
+          body: file // Envío directo del binario
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          // Actualizar estado local del socio seleccionado
+          const socioActualizado = { ...socioSeleccionado };
+          if (!socioActualizado.documentos) socioActualizado.documentos = {};
+          socioActualizado.documentos[docType] = { status: "Cargado", url: result.url };
+
+          setSocioSeleccionado(socioActualizado);
+          setSocios(socios.map(s => s.id === socioActualizado.id ? socioActualizado : s));
+          alert(`✅ ${docType} cargado correctamente.`);
+        } else {
+          alert("❌ Error al subir el archivo al servidor.");
+        }
+      } catch (error) {
+        alert("❌ Error de red al intentar subir el archivo.");
+      }
+    };
+    input.click();
+  };
+
+  const handleGuardar = async () => {
+    if (!socioSeleccionado) return;
+    try {
+      const response = await fetch('/api/saveSocio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(socioSeleccionado)
+      });
+      if (response.ok) {
+        alert("✅ Cambios guardados en la nube de LACIACOOP");
+        setSocios(socios.map(s => s.id === socioSeleccionado.id ? socioSeleccionado : s));
+      } else {
+        alert("❌ Error al guardar en el servidor");
+      }
+    } catch (error) {
+      alert("❌ Error de conexión al intentar guardar");
+    }
+  };
+
   const sociosFiltrados = socios.filter(s => 
     s.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) || 
     s.rut?.includes(searchTerm)
@@ -74,7 +125,6 @@ function App() {
   return (
     <div style={{ padding: '40px', backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: "'Inter', sans-serif" }}>
       
-      {/* HEADER PRINCIPAL */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
         <div>
           <h1 style={{ color: '#0f172a', margin: 0, fontSize: '32px', fontWeight: '800', letterSpacing: '-0.5px' }}>Gestión de Socios</h1>
@@ -86,10 +136,8 @@ function App() {
         <button onClick={logout} style={logoutButtonStyle}>Cerrar Sesión</button>
       </div>
 
-      {/* DASHBOARD GRID */}
       <div style={{ display: 'grid', gridTemplateColumns: socioSeleccionado ? '400px 1fr' : '1fr', gap: '30px', transition: 'all 0.4s ease' }}>
         
-        {/* COLUMNA IZQUIERDA: BUSCADOR Y LISTADO */}
         <div>
           <div style={{ position: 'relative', marginBottom: '24px' }}>
             <input 
@@ -136,7 +184,6 @@ function App() {
           </div>
         </div>
 
-        {/* COLUMNA DERECHA: CARPETA DIGITAL DETALLADA */}
         {socioSeleccionado && (
           <div style={{ ...panelStyle, borderTop: '8px solid #3b82f6', animation: 'slideIn 0.3s ease-out' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '30px' }}>
@@ -151,7 +198,6 @@ function App() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '40px' }}>
               
-              {/* LISTADO DE DOCUMENTACIÓN */}
               <div>
                 <h4 style={sectionHeaderStyle}>📂 CARPETA DOCUMENTAL DIGITAL</h4>
                 <div style={{ backgroundColor: '#f8fafc', borderRadius: '16px', padding: '10px' }}>
@@ -170,7 +216,13 @@ function App() {
                           }}>
                             {status}
                           </span>
-                          <button style={uploadIconStyle} title="Subir documento">📁</button>
+                          <button 
+                            style={uploadIconStyle} 
+                            title="Subir documento"
+                            onClick={() => handleUpload(doc)} // Vínculo a la función de subida
+                          >
+                            📁
+                          </button>
                         </div>
                       </div>
                     );
@@ -178,13 +230,13 @@ function App() {
                 </div>
               </div>
 
-              {/* GESTIÓN ADMINISTRATIVA */}
               <div style={{ borderLeft: '1px solid #e2e8f0', paddingLeft: '30px' }}>
                 <h4 style={sectionHeaderStyle}>📝 OBSERVACIONES ADMINISTRATIVAS</h4>
                 <textarea 
-                  placeholder="Escriba aquí el historial de versiones, observaciones de la directiva o comentarios relevantes..." 
+                  placeholder="Escriba aquí el historial de versiones..." 
                   style={textareaStyle}
-                  defaultValue={socioSeleccionado.observaciones}
+                  value={socioSeleccionado.observaciones || ""}
+                  onChange={(e) => setSocioSeleccionado({...socioSeleccionado, observaciones: e.target.value})}
                 />
                 
                 <div style={infoBoxStyle}>
@@ -192,7 +244,7 @@ function App() {
                   <p style={{ margin: '0', fontSize: '13px' }}><strong>Última Factibilidad:</strong> Emitida 12/03/2024</p>
                 </div>
 
-                <button style={saveButtonStyle} onClick={() => alert("Cambios guardados localmente (Backend pendiente)")}>
+                <button style={saveButtonStyle} onClick={handleGuardar}>
                   Guardar Cambios en Ficha
                 </button>
               </div>
@@ -212,7 +264,6 @@ function App() {
   );
 }
 
-// COMPONENTES ESTILIZADOS INTERNOS
 const StatCard = ({ title, value, color, icon }) => (
   <div style={{ background: 'white', padding: '16px', borderRadius: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9', textAlign: 'center' }}>
     <div style={{ fontSize: '20px', marginBottom: '5px' }}>{icon}</div>
@@ -221,7 +272,6 @@ const StatCard = ({ title, value, color, icon }) => (
   </div>
 );
 
-// OBJETOS DE ESTILO
 const centerStyle = { display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f8fafc' };
 const loginBgStyle = { height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' };
 const loginCardStyle = { backgroundColor: 'white', padding: '60px', borderRadius: '40px', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', maxWidth: '500px' };
