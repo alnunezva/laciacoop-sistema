@@ -5,9 +5,18 @@ function App() {
   const [searchTerm, setSearchTerm] = useState("");
   const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [socioSeleccionado, setSocioSeleccionado] = useState(null);
+
+  // Definición oficial de la carpeta documental
+  const tiposDocumentos = [
+    "Solicitud de incorporación", "Cédula de identidad", "Título de dominio",
+    "Pago cuota de incorporación", "Pago cuota de participación", "Transferencias",
+    "Cesión de derechos", "Compra y venta", "Actualización de datos",
+    "Certificación de factibilidad de agua", "Certificación de deudas de agua"
+  ];
 
   useEffect(() => {
-    // 1. Obtener información de sesión de Azure Static Web Apps
+    // 1. Obtener sesión de Azure
     fetch('/.auth/me')
       .then(res => res.json())
       .then(data => {
@@ -16,38 +25,29 @@ function App() {
       })
       .catch(() => setLoading(false));
 
-    // 2. Obtener lista de socios desde la API
+    // 2. Obtener socios
     fetch('/api/getSocios')
       .then(res => res.json())
       .then(data => setSocios(Array.isArray(data) ? data : []))
-      .catch(err => console.error("Error al cargar socios:", err));
+      .catch(err => console.error("Error API:", err));
   }, []);
 
-  // Lógica de Filtrado (Se aplica a todo el Dashboard)
+  // Lógica de Filtrado
   const sociosFiltrados = socios.filter(s => 
     s.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) || 
     s.rut?.includes(searchTerm)
   );
 
-  // Estadísticas calculadas sobre el total de socios
   const stats = {
     total: socios.length,
     completos: socios.filter(s => s.documentos && Object.values(s.documentos).every(d => d.status === "Cargado")).length,
     incompletos: socios.length - socios.filter(s => s.documentos && Object.values(s.documentos).every(d => d.status === "Cargado")).length
   };
 
-  // Listas limitadas para las tablas del dashboard
-  const ultimosRegistrados = [...sociosFiltrados].reverse().slice(0, 6);
-  
-  const pendientes = sociosFiltrados
-    .filter(s => s.documentos && Object.values(s.documentos).some(d => d.status === "No cargado"))
-    .slice(0, 6);
-
   const logout = () => {
     window.location.href = "/.auth/logout?post_logout_redirect_uri=/";
   };
 
-  // ESTADO DE CARGA
   if (loading) return (
     <div style={centerStyle}>
       <div className="spinner"></div>
@@ -55,147 +55,190 @@ function App() {
     </div>
   );
 
-  // PANTALLA DE LOGIN (Si no hay sesión de Azure activa)
   if (!userInfo) return (
     <div style={loginBgStyle}>
       <div style={loginCardStyle}>
-        <div style={{ fontSize: '50px', marginBottom: '10px' }}>🚜</div>
-        <h1 style={{ color: '#1e293b', marginBottom: '10px', fontSize: '24px' }}>LACIACOOP</h1>
-        <p style={{ color: '#64748b', marginBottom: '30px', lineHeight: '1.5' }}>
-          Bienvenido al Gestor Documental.<br/>Use su cuenta institucional para entrar.
+        <div style={{ fontSize: '60px', marginBottom: '20px' }}>🚜</div>
+        <h1 style={{ color: '#1e293b', marginBottom: '10px', fontSize: '28px', fontWeight: '800' }}>LACIACOOP</h1>
+        <p style={{ color: '#64748b', marginBottom: '30px', lineHeight: '1.6' }}>
+          Sistema de Gestión Documental.<br/>Ingrese con su cuenta institucional.
         </p>
         <a href="/.auth/login/google" style={loginButtonStyle}>
           <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="G" style={{ width: '20px', marginRight: '12px' }} />
-          Entrar con Google Workspace
+          Acceder con Google Workspace
         </a>
       </div>
     </div>
   );
 
   return (
-    <div style={{ padding: '40px', backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: "'Inter', system-ui, sans-serif" }}>
+    <div style={{ padding: '40px', backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: "'Inter', sans-serif" }}>
       
-      {/* HEADER / NAVBAR */}
+      {/* HEADER PRINCIPAL */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
         <div>
-          <h1 style={{ color: '#0f172a', margin: 0, fontSize: '28px', fontWeight: '800' }}>Panel de Control</h1>
+          <h1 style={{ color: '#0f172a', margin: 0, fontSize: '32px', fontWeight: '800', letterSpacing: '-0.5px' }}>Gestión de Socios</h1>
           <p style={{ color: '#64748b', margin: '5px 0 0 0', display: 'flex', alignItems: 'center' }}>
-            <span style={{ width: '8px', height: '8px', backgroundColor: '#10b981', borderRadius: '50%', marginRight: '8px' }}></span>
-            Sesión activa: <strong style={{ marginLeft: '5px', color: '#334155' }}>{userInfo.userDetails}</strong>
+            <span style={{ width: '10px', height: '10px', backgroundColor: '#10b981', borderRadius: '50%', marginRight: '10px' }}></span>
+            Conectado como: <strong style={{ marginLeft: '5px', color: '#334155' }}>{userInfo.userDetails}</strong>
           </p>
         </div>
         <button onClick={logout} style={logoutButtonStyle}>Cerrar Sesión</button>
       </div>
 
-      {/* BUSCADOR */}
-      <div style={{ position: 'relative', marginBottom: '40px' }}>
-        <input 
-          type="text" 
-          placeholder="🔍 Buscar socio por nombre, RUT o número de registro..." 
-          style={searchStyles}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </div>
-
-      {/* KPI CARDS */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px', marginBottom: '40px' }}>
-        <StatCard title="Total de Socios" value={stats.total} color="#3b82f6" icon="👥" />
-        <StatCard title="Carpetas al Día" value={stats.completos} color="#10b981" icon="✅" />
-        <StatCard title="Pendientes" value={stats.incompletos} color="#f59e0b" icon="⚠️" />
-      </div>
-
-      {/* SECCIÓN DE TABLAS */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '32px' }}>
+      {/* DASHBOARD GRID */}
+      <div style={{ display: 'grid', gridTemplateColumns: socioSeleccionado ? '400px 1fr' : '1fr', gap: '30px', transition: 'all 0.4s ease' }}>
         
-        {/* TABLA: RECIENTES */}
-        <div style={panelStyle}>
-          <div style={panelHeaderStyle}>
-            <h3 style={{ margin: 0, fontSize: '18px', color: '#1e293b' }}>🆕 Últimos Registros</h3>
-            <span style={badgeStyle}>Ver todo</span>
+        {/* COLUMNA IZQUIERDA: BUSCADOR Y LISTADO */}
+        <div>
+          <div style={{ position: 'relative', marginBottom: '24px' }}>
+            <input 
+              type="text" 
+              placeholder="🔍 Buscar por nombre o RUT..." 
+              style={searchStyles}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
-          <table style={tableStyle}>
-            <thead>
-              <tr style={thStyle}>
-                <th style={{ padding: '12px 0' }}>Socio</th>
-                <th style={{ padding: '12px 0' }}>RUT</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ultimosRegistrados.map(s => (
-                <tr key={s.id} className="row-hover" style={trStyle}>
-                  <td style={{ padding: '16px 0', fontWeight: '600', color: '#334155' }}>{s.nombre}</td>
-                  <td style={{ padding: '16px 0', color: '#64748b' }}>{s.rut}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+
+          {!socioSeleccionado && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', marginBottom: '24px' }}>
+              <StatCard title="Total" value={stats.total} color="#3b82f6" icon="👥" />
+              <StatCard title="Al Día" value={stats.completos} color="#10b981" icon="✅" />
+              <StatCard title="Pend." value={stats.incompletos} color="#f59e0b" icon="⚠️" />
+            </div>
+          )}
+
+          <div style={panelStyle}>
+            <div style={{ maxHeight: 'calc(100vh - 350px)', overflowY: 'auto', paddingRight: '5px' }}>
+              <table style={tableStyle}>
+                <thead>
+                  <tr style={thStyle}>
+                    <th style={{ padding: '12px' }}>Socio</th>
+                    <th style={{ padding: '12px' }}>RUT</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sociosFiltrados.map(s => (
+                    <tr 
+                      key={s.id} 
+                      className="row-hover" 
+                      onClick={() => setSocioSeleccionado(s)}
+                      style={{ ...trStyle, backgroundColor: socioSeleccionado?.id === s.id ? '#f1f5f9' : 'transparent' }}
+                    >
+                      <td style={{ padding: '16px 12px', fontWeight: '600', color: '#1e293b' }}>{s.nombre}</td>
+                      <td style={{ padding: '16px 12px', color: '#64748b', fontSize: '13px' }}>{s.rut}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
-        {/* TABLA: ALERTAS */}
-        <div style={panelStyle}>
-          <div style={panelHeaderStyle}>
-            <h3 style={{ margin: 0, fontSize: '18px', color: '#1e293b' }}>🚨 Alerta Documental</h3>
-            <span style={{ ...badgeStyle, backgroundColor: '#fee2e2', color: '#991b1b' }}>Prioridad</span>
+        {/* COLUMNA DERECHA: CARPETA DIGITAL DETALLADA */}
+        {socioSeleccionado && (
+          <div style={{ ...panelStyle, borderTop: '8px solid #3b82f6', animation: 'slideIn 0.3s ease-out' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '30px' }}>
+              <div>
+                <h2 style={{ margin: 0, color: '#0f172a', fontSize: '24px', fontWeight: '800' }}>{socioSeleccionado.nombre}</h2>
+                <p style={{ color: '#64748b', margin: '8px 0' }}>
+                  RUT: <strong>{socioSeleccionado.rut}</strong> | Registro: <strong>{socioSeleccionado.fechaIncorporacion || 'Pendiente'}</strong>
+                </p>
+              </div>
+              <button onClick={() => setSocioSeleccionado(null)} style={closeButtonStyle}>✕ Cerrar Ficha</button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '40px' }}>
+              
+              {/* LISTADO DE DOCUMENTACIÓN */}
+              <div>
+                <h4 style={sectionHeaderStyle}>📂 CARPETA DOCUMENTAL DIGITAL</h4>
+                <div style={{ backgroundColor: '#f8fafc', borderRadius: '16px', padding: '10px' }}>
+                  {tiposDocumentos.map((doc, index) => {
+                    const status = socioSeleccionado.documentos?.[doc]?.status || "No cargado";
+                    return (
+                      <div key={index} style={documentRowStyle}>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontSize: '14px', fontWeight: '500', color: '#334155' }}>{doc}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <span style={{ 
+                            ...statusBadgeStyle, 
+                            backgroundColor: status === "Cargado" ? '#dcfce7' : '#fee2e2',
+                            color: status === "Cargado" ? '#166534' : '#991b1b'
+                          }}>
+                            {status}
+                          </span>
+                          <button style={uploadIconStyle} title="Subir documento">📁</button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* GESTIÓN ADMINISTRATIVA */}
+              <div style={{ borderLeft: '1px solid #e2e8f0', paddingLeft: '30px' }}>
+                <h4 style={sectionHeaderStyle}>📝 OBSERVACIONES ADMINISTRATIVAS</h4>
+                <textarea 
+                  placeholder="Escriba aquí el historial de versiones, observaciones de la directiva o comentarios relevantes..." 
+                  style={textareaStyle}
+                  defaultValue={socioSeleccionado.observaciones}
+                />
+                
+                <div style={infoBoxStyle}>
+                  <p style={{ margin: '0 0 10px 0', fontSize: '13px' }}><strong>Estado de Cuenta:</strong> Sin deudas</p>
+                  <p style={{ margin: '0', fontSize: '13px' }}><strong>Última Factibilidad:</strong> Emitida 12/03/2024</p>
+                </div>
+
+                <button style={saveButtonStyle} onClick={() => alert("Cambios guardados localmente (Backend pendiente)")}>
+                  Guardar Cambios en Ficha
+                </button>
+              </div>
+            </div>
           </div>
-          <table style={tableStyle}>
-            <thead>
-              <tr style={thStyle}>
-                <th style={{ padding: '12px 0' }}>Socio</th>
-                <th style={{ padding: '12px 0' }}>Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pendientes.map(s => (
-                <tr key={s.id} className="row-hover" style={trStyle}>
-                  <td style={{ padding: '16px 0', fontWeight: '600', color: '#334155' }}>{s.nombre}</td>
-                  <td style={{ padding: '16px 0' }}>
-                    <span style={errorLabelStyle}>
-                      {Object.values(s.documentos || {}).filter(d => d.status === "No cargado").length} faltantes
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        )}
 
       </div>
-      
-      {/* Estilos CSS inyectados para efectos hover y animaciones */}
+
       <style>{`
-        .row-hover:hover { background-color: #f8fafc; cursor: pointer; }
-        .spinner { border: 4px solid rgba(0,0,0,.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: #3b82f6; animation: spin 1s linear infinite; }
+        .row-hover:hover { background-color: #f8fafc !important; cursor: pointer; }
+        .spinner { border: 4px solid rgba(0,0,0,.05); width: 40px; height: 40px; border-radius: 50%; border-left-color: #3b82f6; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
       `}</style>
     </div>
   );
 }
 
-// COMPONENTE CARD REUTILIZABLE
+// COMPONENTES ESTILIZADOS INTERNOS
 const StatCard = ({ title, value, color, icon }) => (
-  <div style={{ background: 'white', padding: '24px', borderRadius: '20px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', border: '1px solid #f1f5f9' }}>
-    <div style={{ fontSize: '32px', marginRight: '20px', background: `${color}15`, width: '60px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '14px' }}>{icon}</div>
-    <div>
-      <h4 style={{ margin: 0, color: '#64748b', fontWeight: '500', fontSize: '14px' }}>{title}</h4>
-      <h2 style={{ margin: '4px 0 0 0', color: '#1e293b', fontSize: '28px', fontWeight: '800' }}>{value}</h2>
-    </div>
+  <div style={{ background: 'white', padding: '16px', borderRadius: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9', textAlign: 'center' }}>
+    <div style={{ fontSize: '20px', marginBottom: '5px' }}>{icon}</div>
+    <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase' }}>{title}</div>
+    <div style={{ fontSize: '20px', fontWeight: '800', color: color }}>{value}</div>
   </div>
 );
 
-// ESTILOS MEJORADOS
-const centerStyle = { display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f8fafc', color: '#64748b' };
-const loginBgStyle = { height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: 'radial-gradient(circle at top right, #334155, #0f172a)' };
-const loginCardStyle = { backgroundColor: 'white', padding: '50px', borderRadius: '32px', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', maxWidth: '450px', width: '90%' };
-const loginButtonStyle = { display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#1e293b', color: 'white', padding: '16px 24px', borderRadius: '16px', textDecoration: 'none', fontWeight: '600', transition: 'transform 0.2s', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' };
-const logoutButtonStyle = { backgroundColor: '#ffffff', color: '#ef4444', border: '1px solid #fee2e2', padding: '10px 20px', borderRadius: '12px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' };
-const searchStyles = { width: '100%', padding: '20px 28px', borderRadius: '20px', border: '1px solid #e2e8f0', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.05)', fontSize: '16px', outline: 'none', backgroundColor: 'white' };
-const panelStyle = { background: 'white', padding: '30px', borderRadius: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9' };
-const panelHeaderStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' };
-const badgeStyle = { backgroundColor: '#f1f5f9', color: '#475569', padding: '6px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' };
+// OBJETOS DE ESTILO
+const centerStyle = { display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f8fafc' };
+const loginBgStyle = { height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' };
+const loginCardStyle = { backgroundColor: 'white', padding: '60px', borderRadius: '40px', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', maxWidth: '500px' };
+const loginButtonStyle = { display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0f172a', color: 'white', padding: '18px 30px', borderRadius: '18px', textDecoration: 'none', fontWeight: '700', fontSize: '16px' };
+const logoutButtonStyle = { backgroundColor: 'white', color: '#ef4444', border: '1.5px solid #fee2e2', padding: '10px 22px', borderRadius: '14px', fontWeight: '700', cursor: 'pointer' };
+const searchStyles = { width: '100%', padding: '18px 25px', borderRadius: '18px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', fontSize: '16px', outline: 'none', backgroundColor: 'white' };
+const panelStyle = { background: 'white', padding: '32px', borderRadius: '28px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9' };
 const tableStyle = { width: '100%', borderCollapse: 'collapse' };
-const thStyle = { textAlign: 'left', borderBottom: '2px solid #f1f5f9', color: '#94a3b8', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' };
-const trStyle = { borderBottom: '1px solid #f8fafc', transition: 'all 0.2s' };
-const errorLabelStyle = { backgroundColor: '#fee2e2', color: '#991b1b', padding: '4px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: '700' };
+const thStyle = { textAlign: 'left', borderBottom: '2px solid #f1f5f9', color: '#94a3b8', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em' };
+const trStyle = { borderBottom: '1px solid #f1f5f9', transition: 'all 0.2s ease' };
+const closeButtonStyle = { backgroundColor: '#f1f5f9', border: 'none', padding: '8px 16px', borderRadius: '10px', color: '#475569', fontWeight: '700', cursor: 'pointer' };
+const sectionHeaderStyle = { fontSize: '12px', color: '#94a3b8', fontWeight: '700', letterSpacing: '0.05em', marginBottom: '15px' };
+const documentRowStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 15px', borderBottom: '1px solid #edf2f7' };
+const statusBadgeStyle = { padding: '5px 12px', borderRadius: '10px', fontSize: '11px', fontWeight: '800', textTransform: 'uppercase' };
+const uploadIconStyle = { background: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '6px', cursor: 'pointer', fontSize: '16px' };
+const textareaStyle = { width: '100%', height: '180px', borderRadius: '18px', border: '1px solid #e2e8f0', padding: '15px', fontSize: '14px', resize: 'none', backgroundColor: '#fcfcfc', outline: 'none' };
+const infoBoxStyle = { marginTop: '20px', padding: '20px', backgroundColor: '#eff6ff', borderRadius: '18px', color: '#1e40af', border: '1px solid #dbeafe' };
+const saveButtonStyle = { marginTop: '20px', width: '100%', padding: '18px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '18px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)' };
 
 export default App;
