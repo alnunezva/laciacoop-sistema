@@ -1,15 +1,12 @@
 {
   "auth": {
-    "identityProviders": {
-      "google": {
-        "registration": {
-          "clientIdSettingName": "GOOGLE_CLIENT_ID",
-          "clientSecretSettingName": "GOOGLE_CLIENT_SECRET"
-        }
-      }
-    }
+    "rolesSource": "/api/GetRoles"
   },
   "routes": [
+    {
+      "route": "/api/*",
+      "allowedRoles": ["authenticated"]
+    },
     {
       "route": "/.auth/login/google",
       "allowedRoles": ["anonymous"]
@@ -21,7 +18,7 @@
   ],
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/api/*", "/.auth/*"]
+    "exclude": ["/api/*", "/.auth/*", "/static/*"]
   },
   "responseOverrides": {
     "401": {
