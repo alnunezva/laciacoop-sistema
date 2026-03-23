@@ -1,16 +1,32 @@
 {
   "auth": {
-    "rolesSource": "/api/GetRoles"
+    "rolesSource": "/api/GetRoles",
+    "identityProviders": {
+      "google": {
+        "registration": {
+          "clientIdSettingName": "404560188878-h5v0npcbrfsqf5r0esmq0vcufn5gcheb.apps.googleusercontent.com",
+          "clientSecretSettingName": "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"
+        }
+      }
+    }
   },
   "routes": [
     {
+      "route": "/.auth/login/google",
+      "allowedRoles": ["anonymous"]
+    },
+    {
       "route": "/*",
-      "allowedRoles": ["authenticated"]
+      "allowedRoles": ["authenticated"] 
     }
   ],
   "responseOverrides": {
+    "401": {
+      "redirect": "/.auth/login/google",
+      "statusCode": 302
+    },
     "403": {
-      "rewrite": "/invalid-domain.html",
+      "rewrite": "/403.html",
       "statusCode": 403
     }
   }
