@@ -260,7 +260,18 @@ function App() {
       
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div style={{ width: '65px', height: '65px', backgroundColor: 'white', borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+          <div style={{ 
+            width: '65px', 
+            height: '65px', 
+            backgroundColor: 'white', 
+            borderRadius: '18px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+            border: '1px solid #e2e8f0',
+            overflow: 'hidden'
+          }}>
             <img src="/logo_laciacoop.png" alt="Logo Corporativo LACIACOOP" style={{ width: '85%', height: 'auto', objectFit: 'contain' }} />
           </div>
           <div>
@@ -312,7 +323,7 @@ function App() {
           <div style={{ ...panelStyle, borderTop: '8px solid #3b82f6', animation: 'slideIn 0.3s ease-out' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '30px' }}>
               <div style={{ width: '100%' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '15px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1.5fr', gap: '15px', alignItems: 'end' }}>
                    <div>
                     <label style={labelStyle}>Nombre Completo</label>
                     <input style={inputEditStyle} value={socioSeleccionado.nombre || ""} onChange={(e) => setSocioSeleccionado({...socioSeleccionado, nombre: e.target.value})} />
@@ -329,9 +340,9 @@ function App() {
                         <option value="Retirado">🔴 Retirado</option>
                     </select>
                    </div>
-                   <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end' }}>
-                      <button onClick={handleEliminarSocio} style={deleteSocioButtonStyle}>🗑️ Eliminar</button>
-                      <button onClick={() => setSocioSeleccionado(null)} style={closeButtonStyle}>✕ Cerrar</button>
+                   <div style={{ display: 'flex', gap: '8px', height: '40px' }}>
+                      <button onClick={handleEliminarSocio} style={{ ...deleteSocioButtonStyle, flex: 1, padding: '0 10px', fontSize: '12px' }}>🗑️ Eliminar</button>
+                      <button onClick={() => setSocioSeleccionado(null)} style={{ ...closeButtonStyle, flex: 1, padding: '0 10px', fontSize: '12px' }}>✕ Cerrar</button>
                    </div>
                 </div>
               </div>
@@ -398,28 +409,28 @@ const StatCard = ({ title, value, color, icon }) => (
   </div>
 );
 
-const centerStyle = { display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh' };
+const centerStyle = { display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f8fafc' };
 const loginBgStyle = { height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#0f172a' };
 const loginCardStyle = { backgroundColor: 'white', padding: '60px', borderRadius: '40px', textAlign: 'center' };
 const loginButtonStyle = { display: 'flex', alignItems: 'center', background: '#0f172a', color: 'white', padding: '18px 30px', borderRadius: '18px', textDecoration: 'none' };
-const logoutButtonStyle = { background: 'white', color: '#ef4444', border: '1px solid #fee2e2', padding: '10px 22px', borderRadius: '14px', cursor: 'pointer' };
-const searchStyles = { width: '100%', padding: '18px 25px', borderRadius: '18px', border: '1px solid #e2e8f0' };
+const logoutButtonStyle = { background: 'white', color: '#ef4444', border: '1px solid #fee2e2', padding: '10px 22px', borderRadius: '14px', cursor: 'pointer', fontWeight: '700' };
+const searchStyles = { width: '100%', padding: '18px 25px', borderRadius: '18px', border: '1px solid #e2e8f0', outline: 'none' };
 const panelStyle = { background: 'white', padding: '32px', borderRadius: '28px', border: '1px solid #f1f5f9' };
 const tableStyle = { width: '100%', borderCollapse: 'collapse' };
 const thStyle = { textAlign: 'left', borderBottom: '2px solid #f1f5f9', color: '#94a3b8', fontSize: '11px' };
 const trStyle = { borderBottom: '1px solid #f1f5f9' };
-const closeButtonStyle = { backgroundColor: '#f1f5f9', border: 'none', padding: '8px 16px', borderRadius: '10px', fontWeight: '700', cursor: 'pointer' };
-const deleteSocioButtonStyle = { backgroundColor: '#fee2e2', border: '1px solid #ef4444', padding: '8px 16px', borderRadius: '10px', color: '#ef4444', fontWeight: '700', cursor: 'pointer' };
+const closeButtonStyle = { backgroundColor: '#f1f5f9', border: 'none', borderRadius: '10px', color: '#475569', fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap' };
+const deleteSocioButtonStyle = { backgroundColor: '#fee2e2', border: '1px solid #ef4444', borderRadius: '10px', color: '#ef4444', fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap' };
 const sectionHeaderStyle = { fontSize: '12px', color: '#94a3b8', fontWeight: '700', marginBottom: '15px' };
-const documentRowStyle = { display: 'flex', justifyContent: 'space-between', padding: '12px 15px', borderBottom: '1px solid #edf2f7' };
+const documentRowStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 15px', borderBottom: '1px solid #edf2f7' };
 const statusBadgeStyle = { padding: '5px 12px', borderRadius: '10px', fontSize: '11px', fontWeight: '800' };
-const uploadIconStyle = { background: 'white', border: '1px solid #e2e8f0', padding: '6px', cursor: 'pointer' };
-const actionIconStyle = { background: 'white', border: '1px solid #e2e8f0', padding: '6px', cursor: 'pointer' };
-const textareaStyle = { width: '100%', height: '180px', borderRadius: '18px', border: '1px solid #e2e8f0', padding: '15px' };
+const uploadIconStyle = { background: 'white', border: '1px solid #e2e8f0', padding: '6px', cursor: 'pointer', borderRadius: '8px' };
+const actionIconStyle = { background: 'white', border: '1px solid #e2e8f0', padding: '6px', cursor: 'pointer', borderRadius: '8px' };
+const textareaStyle = { width: '100%', height: '180px', borderRadius: '18px', border: '1px solid #e2e8f0', padding: '15px', outline: 'none' };
 const infoBoxStyle = { marginTop: '20px', padding: '20px', background: '#eff6ff', borderRadius: '18px', border: '1px solid #dbeafe' };
-const saveButtonStyle = { marginTop: '20px', width: '100%', padding: '18px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '18px', cursor: 'pointer' };
+const saveButtonStyle = { marginTop: '20px', width: '100%', padding: '18px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '18px', fontWeight: '700', cursor: 'pointer' };
 const labelStyle = { display: 'block', fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '5px' };
-const inputEditStyle = { width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid #e2e8f0' };
-const importButtonStyle = { width: '100%', padding: '14px', background: 'white', border: '2px dashed #3b82f6', borderRadius: '16px', color: '#3b82f6', cursor: 'pointer', marginBottom: '30px' };
+const inputEditStyle = { width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid #e2e8f0', outline: 'none' };
+const importButtonStyle = { width: '100%', padding: '14px', background: 'white', border: '2px dashed #3b82f6', borderRadius: '16px', color: '#3b82f6', cursor: 'pointer', marginBottom: '30px', fontWeight: '700' };
 
 export default App;
