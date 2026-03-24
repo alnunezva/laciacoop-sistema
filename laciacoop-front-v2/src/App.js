@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import Papa from 'papaparse'; // Asegúrate de instalarlo: npm install papaparse
 
 function App() {
   const [socios, setSocios] = useState([]);
@@ -115,6 +116,68 @@ function App() {
     }
   };
 
+  // --- NUEVA FUNCIÓN DE IMPORTACIÓN MASIVA ---
+  const handleImportCSV = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv';
+
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (!window.confirm(`¿Iniciar carga masiva de ${file.name}?`)) return;
+
+      setLoading(true);
+
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        delimiter: ";",
+        encoding: "UTF-8",
+        complete: async (results) => {
+          let exitos = 0;
+          let errores = 0;
+
+          for (const row of results.data) {
+            const rutOriginal = row['Rut'] ? row['Rut'].trim() : "";
+            const idLimpio = rutOriginal.replace(/\./g, '').replace(/-/g, '');
+            
+            if (!idLimpio) { errores++; continue; }
+
+            const socioParaUpsert = {
+              id: idLimpio, 
+              nombre: row['Socio'] ? row['Socio'].trim() : "Sin Nombre",
+              rut: rutOriginal,
+              direccion: row['Domicilio'] ? row['Domicilio'].trim() : "",
+              fechaIncorporacion: row['Fecha Incorporación'] ? row['Fecha Incorporación'].split('-').reverse().join('-') : "", 
+              contratos: row['Contratos Asociados'] ? [row['Contratos Asociados'].toString().trim()] : [],
+              estado: "Activo",
+              documentos: {}, 
+              observaciones: `Carga inicial masiva: ${new Date().toLocaleDateString()}`,
+              sexo: row['Sexo'] || "",
+              estadoCivil: row['Estado Civil'] || "",
+              profesion: row['Profesión U Oficio'] || ""
+            };
+
+            try {
+              const res = await fetch('/api/saveSocio', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(socioParaUpsert)
+              });
+              if (res.ok) exitos++; else errores++;
+            } catch (err) { errores++; }
+          }
+
+          setLoading(false);
+          alert(`🏁 Carga Finalizada\n✅ Exitosos: ${exitos}\n❌ Errores: ${errores}`);
+          window.location.reload(); 
+        }
+      });
+    };
+    input.click();
+  };
+
   const sociosFiltrados = socios.filter(s => 
     s.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) || 
     s.rut?.includes(searchTerm)
@@ -181,11 +244,14 @@ function App() {
           </div>
 
           {!socioSeleccionado && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', marginBottom: '24px' }}>
-              <StatCard title="Total" value={stats.total} color="#3b82f6" icon="👥" />
-              <StatCard title="Al Día" value={stats.completos} color="#10b981" icon="✅" />
-              <StatCard title="Pend." value={stats.incompletos} color="#f59e0b" icon="⚠️" />
-            </div>
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', marginBottom: '15px' }}>
+                <StatCard title="Total" value={stats.total} color="#3b82f6" icon="👥" />
+                <StatCard title="Al Día" value={stats.completos} color="#10b981" icon="✅" />
+                <StatCard title="Pend." value={stats.incompletos} color="#f59e0b" icon="⚠️" />
+              </div>
+              <button onClick={handleImportCSV} style={importButtonStyle}>📥 IMPORTACIÓN MASIVA (CSV)</button>
+            </>
           )}
 
           <div style={panelStyle}>
@@ -367,5 +433,6 @@ const infoBoxStyle = { marginTop: '20px', padding: '20px', backgroundColor: '#ef
 const saveButtonStyle = { marginTop: '20px', width: '100%', padding: '18px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '18px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)' };
 const labelStyle = { display: 'block', fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', marginBottom: '5px', marginLeft: '2px' };
 const inputEditStyle = { width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '14px', color: '#1e293b', outline: 'none', backgroundColor: 'white', boxSizing: 'border-box' };
+const importButtonStyle = { width: '100%', padding: '14px', backgroundColor: '#ffffff', border: '2px dashed #3b82f6', borderRadius: '16px', color: '#3b82f6', fontWeight: '800', fontSize: '13px', cursor: 'pointer', marginBottom: '30px', transition: 'all 0.2s ease', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' };
 
 export default App;
