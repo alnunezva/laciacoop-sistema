@@ -102,29 +102,45 @@ function App() {
     }
   };
 
-  const handleDelete = async (docType) => {
+const handleDelete = async (docType) => {
     if (!window.confirm(`¿Está seguro de eliminar el documento: ${docType}?`)) return;
 
     try {
       const docInfo = socioSeleccionado.documentos[docType];
-      const fileName = docInfo.url.split('/').pop().split('_').slice(1).join('_').split('?')[0];
+      
+      // 1. Limpiamos la URL de tokens de seguridad (?...)
+      const urlSinToken = docInfo.url.split('?')[0];
+      
+      // 2. Obtenemos el nombre completo del archivo (ej: "Cédula de identidad_mi_foto.jpg")
+      const fullFileName = decodeURIComponent(urlSinToken.split('/').pop());
 
-      const response = await fetch(`/api/deleteDoc?socioId=${socioSeleccionado.id}&docType=${encodeURIComponent(docType)}&fileName=${encodeURIComponent(fileName)}`, {
-        method: 'DELETE'
-      });
+      // 3. Extraemos SOLO el nombre original del archivo eliminando el prefijo del tipo de doc
+      // Buscamos el primer "_" que separa el tipo del nombre real
+      const fileName = fullFileName.substring(docType.length + 1);
+
+      // 4. Llamada a la API
+      const response = await fetch(
+        `/api/deleteDoc?socioId=${socioSeleccionado.id}&docType=${encodeURIComponent(docType)}&fileName=${encodeURIComponent(fileName)}`, 
+        { method: 'DELETE' }
+      );
 
       if (response.ok) {
+        // 5. Actualización sincronizada con CosmosDB
         const socioActualizado = { ...socioSeleccionado };
         delete socioActualizado.documentos[docType];
 
         const guardadoExitoso = await handleGuardar(socioActualizado);
         if (guardadoExitoso) {
           setSocioSeleccionado(socioActualizado);
-          alert("🗑️ Documento eliminado de la nube.");
+          alert("🗑️ Documento eliminado de la nube y ficha actualizada.");
         }
+      } else {
+        const errorText = await response.text();
+        alert(`❌ Error al eliminar: ${errorText}`);
       }
     } catch (error) {
-      alert("❌ Error al intentar eliminar.");
+      console.error("Error en handleDelete:", error);
+      alert("❌ Error de conexión al intentar eliminar.");
     }
   };
 
