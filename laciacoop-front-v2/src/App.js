@@ -66,7 +66,6 @@ function App() {
           const result = await response.json();
           const socioActualizado = { ...socioSeleccionado };
           if (!socioActualizado.documentos) socioActualizado.documentos = {};
-          // Guardamos la URL (que ahora viene con token temporal)
           socioActualizado.documentos[docType] = { status: "Cargado", url: result.url };
 
           const guardadoExitoso = await handleGuardar(socioActualizado);
@@ -82,65 +81,37 @@ function App() {
     input.click();
   };
 
-  // --- NUEVA FUNCIÓN DE DESCARGA SEGURA (SAS TOKEN) ---
   const handleDownload = async (docType) => {
     try {
       const docInfo = socioSeleccionado.documentos[docType];
-      // Extraemos la ruta del blob (socioId/tipo_archivo.pdf) desde la URL guardada
       const blobPath = docInfo.url.split('/documentos-socios/')[1].split('?')[0];
-
       const response = await fetch(`/api/getDocUrl?blobPath=${encodeURIComponent(blobPath)}`);
       const data = await response.json();
-      
-      if (data.url) {
-        window.open(data.url, '_blank');
-      } else {
-        throw new Error("No se generó la URL");
-      }
+      if (data.url) window.open(data.url, '_blank');
     } catch (error) {
       alert("❌ Error: No se pudo generar el acceso seguro al documento.");
     }
   };
 
-const handleDelete = async (docType) => {
+  const handleDelete = async (docType) => {
     if (!window.confirm(`¿Está seguro de eliminar el documento: ${docType}?`)) return;
-
     try {
       const docInfo = socioSeleccionado.documentos[docType];
-      
-      // 1. Limpiamos la URL de tokens de seguridad (?...)
       const urlSinToken = docInfo.url.split('?')[0];
-      
-      // 2. Obtenemos el nombre completo del archivo (ej: "Cédula de identidad_mi_foto.jpg")
       const fullFileName = decodeURIComponent(urlSinToken.split('/').pop());
-
-      // 3. Extraemos SOLO el nombre original del archivo eliminando el prefijo del tipo de doc
-      // Buscamos el primer "_" que separa el tipo del nombre real
       const fileName = fullFileName.substring(docType.length + 1);
-
-      // 4. Llamada a la API
-      const response = await fetch(
-        `/api/deleteDoc?socioId=${socioSeleccionado.id}&docType=${encodeURIComponent(docType)}&fileName=${encodeURIComponent(fileName)}`, 
-        { method: 'DELETE' }
-      );
-
+      const response = await fetch(`/api/deleteDoc?socioId=${socioSeleccionado.id}&docType=${encodeURIComponent(docType)}&fileName=${encodeURIComponent(fileName)}`, { method: 'DELETE' });
       if (response.ok) {
-        // 5. Actualización sincronizada con CosmosDB
         const socioActualizado = { ...socioSeleccionado };
         delete socioActualizado.documentos[docType];
-
         const guardadoExitoso = await handleGuardar(socioActualizado);
         if (guardadoExitoso) {
           setSocioSeleccionado(socioActualizado);
           alert("🗑️ Documento eliminado de la nube y ficha actualizada.");
         }
-      } else {
-        const errorText = await response.text();
-        alert(`❌ Error al eliminar: ${errorText}`);
       }
     } catch (error) {
-      console.error("Error en handleDelete:", error);
-      alert("❌ Error de conexión al intentar eliminar.");
+      alert("❌ Error al intentar eliminar.");
     }
   };
 
@@ -247,18 +218,58 @@ const handleDelete = async (docType) => {
         {socioSeleccionado && (
           <div style={{ ...panelStyle, borderTop: '8px solid #3b82f6', animation: 'slideIn 0.3s ease-out' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '30px' }}>
-              <div>
-                <h2 style={{ margin: 0, color: '#0f172a', fontSize: '24px', fontWeight: '800' }}>{socioSeleccionado.nombre}</h2>
-                <p style={{ color: '#64748b', margin: '8px 0' }}>
-                  RUT: <strong>{socioSeleccionado.rut}</strong> | Registro: <strong>{socioSeleccionado.fechaIncorporacion || 'Pendiente'}</strong>
-                </p>
+              <div style={{ width: '100%' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '15px' }}>
+                   <div>
+                    <label style={labelStyle}>Nombre Completo</label>
+                    <input style={inputEditStyle} value={socioSeleccionado.nombre || ""} onChange={(e) => setSocioSeleccionado({...socioSeleccionado, nombre: e.target.value})} />
+                   </div>
+                   <div>
+                    <label style={labelStyle}>RUT</label>
+                    <input style={inputEditStyle} value={socioSeleccionado.rut || ""} onChange={(e) => setSocioSeleccionado({...socioSeleccionado, rut: e.target.value})} />
+                   </div>
+                   <div>
+                    <label style={labelStyle}>Estado</label>
+                    <select style={inputEditStyle} value={socioSeleccionado.estado || "Activo"} onChange={(e) => setSocioSeleccionado({...socioSeleccionado, estado: e.target.value})}>
+                        <option value="Activo">🟢 Activo</option>
+                        <option value="Suspendido">🟡 Suspendido</option>
+                        <option value="Retirado">🔴 Retirado</option>
+                    </select>
+                   </div>
+                   <button onClick={() => setSocioSeleccionado(null)} style={closeButtonStyle}>✕ Cerrar Ficha</button>
+                </div>
               </div>
-              <button onClick={() => setSocioSeleccionado(null)} style={closeButtonStyle}>✕ Cerrar Ficha</button>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '40px' }}>
-              
               <div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
+                   <div>
+                    <label style={labelStyle}>Dirección</label>
+                    <input style={inputEditStyle} value={socioSeleccionado.direccion || ""} onChange={(e) => setSocioSeleccionado({...socioSeleccionado, direccion: e.target.value})} />
+                   </div>
+                   <div>
+                    <label style={labelStyle}>Teléfono</label>
+                    <input style={inputEditStyle} value={socioSeleccionado.telefono || ""} onChange={(e) => setSocioSeleccionado({...socioSeleccionado, telefono: e.target.value})} />
+                   </div>
+                   <div>
+                    <label style={labelStyle}>Correo Electrónico</label>
+                    <input style={inputEditStyle} value={socioSeleccionado.email || ""} onChange={(e) => setSocioSeleccionado({...socioSeleccionado, email: e.target.value})} />
+                   </div>
+                   <div>
+                    <label style={labelStyle}>Fecha Incorporación</label>
+                    <input type="date" style={inputEditStyle} value={socioSeleccionado.fechaIncorporacion || ""} onChange={(e) => setSocioSeleccionado({...socioSeleccionado, fechaIncorporacion: e.target.value})} />
+                   </div>
+                </div>
+
+                <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f1f5f9', borderRadius: '12px' }}>
+                    <label style={labelStyle}>Contratos Asociados (Separe por comas)</label>
+                    <input placeholder="Ej: Contrato 2024-A, Anexo Agua..." style={inputEditStyle} value={socioSeleccionado.contratos ? socioSeleccionado.contratos.join(', ') : ""} onChange={(e) => {
+                        const lista = e.target.value.split(',').map(item => item.trim());
+                        setSocioSeleccionado({...socioSeleccionado, contratos: lista});
+                    }} />
+                </div>
+
                 <h4 style={sectionHeaderStyle}>📂 CARPETA DOCUMENTAL DIGITAL</h4>
                 <div style={{ backgroundColor: '#f8fafc', borderRadius: '16px', padding: '10px' }}>
                   {tiposDocumentos.map((doc, index) => {
@@ -345,7 +356,7 @@ const panelStyle = { background: 'white', padding: '32px', borderRadius: '28px',
 const tableStyle = { width: '100%', borderCollapse: 'collapse' };
 const thStyle = { textAlign: 'left', borderBottom: '2px solid #f1f5f9', color: '#94a3b8', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em' };
 const trStyle = { borderBottom: '1px solid #f1f5f9', transition: 'all 0.2s ease' };
-const closeButtonStyle = { backgroundColor: '#f1f5f9', border: 'none', padding: '8px 16px', borderRadius: '10px', color: '#475569', fontWeight: '700', cursor: 'pointer' };
+const closeButtonStyle = { backgroundColor: '#f1f5f9', border: 'none', padding: '8px 16px', borderRadius: '10px', color: '#475569', fontWeight: '700', cursor: 'pointer', height: 'fit-content', alignSelf: 'end' };
 const sectionHeaderStyle = { fontSize: '12px', color: '#94a3b8', fontWeight: '700', letterSpacing: '0.05em', marginBottom: '15px' };
 const documentRowStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 15px', borderBottom: '1px solid #edf2f7' };
 const statusBadgeStyle = { padding: '5px 12px', borderRadius: '10px', fontSize: '11px', fontWeight: '800', textTransform: 'uppercase' };
@@ -354,5 +365,7 @@ const actionIconStyle = { background: 'white', border: '1px solid #e2e8f0', bord
 const textareaStyle = { width: '100%', height: '180px', borderRadius: '18px', border: '1px solid #e2e8f0', padding: '15px', fontSize: '14px', resize: 'none', backgroundColor: '#fcfcfc', outline: 'none' };
 const infoBoxStyle = { marginTop: '20px', padding: '20px', backgroundColor: '#eff6ff', borderRadius: '18px', color: '#1e40af', border: '1px solid #dbeafe' };
 const saveButtonStyle = { marginTop: '20px', width: '100%', padding: '18px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '18px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)' };
+const labelStyle = { display: 'block', fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', marginBottom: '5px', marginLeft: '2px' };
+const inputEditStyle = { width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '14px', color: '#1e293b', outline: 'none', backgroundColor: 'white', boxSizing: 'border-box' };
 
 export default App;
