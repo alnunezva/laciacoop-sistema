@@ -16,11 +16,8 @@ app.http('deleteSocio', {
         try {
             const container = client.database("CoopDB").container("Socios");
 
-            // 1. Primero buscamos al socio para saber cuál es su RUT (su Partition Key)
-            const { resource: socio } = await container.item(id, id).read();
-            
-            // Si el item(id, id) falla porque la PK es /rut, usamos una query rápida:
-            const { resources: socios encontrados } = await container.items
+            // 1. Buscamos al socio para obtener su RUT (que es la Partition Key real)
+            const { resources: sociosEncontrados } = await container.items
                 .query({
                     query: "SELECT c.id, c.rut FROM c WHERE c.id = @id",
                     parameters: [{ name: "@id", value: id }]
@@ -33,10 +30,8 @@ app.http('deleteSocio', {
 
             const rutSocio = sociosEncontrados[0].rut;
 
-            // 2. AHORA SÍ: Borramos usando el ID y el RUT como Partition Key
+            // 2. Borramos usando el ID y el valor del RUT como Partition Key
             await container.item(id, rutSocio).delete();
-
-            context.log(`Socio ${id} con RUT ${rutSocio} eliminado con éxito.`);
 
             return { 
                 status: 200, 
