@@ -186,9 +186,11 @@ function App() {
       return texto
         .toString()
         .toLowerCase()
-        .normalize("NFD") // Separa las tildes de las letras
-        .replace(/[\u0300-\u036f]/g, "") // Elimina las tildes
-        .replace(/[\.\- ]/g, ""); // Elimina puntos, guiones y espacios
+        .normalize("NFD") 
+        .replace(/[\u0300-\u036f]/g, "") 
+        // El guion (-) DEBE ir al final o al principio para no ser un "rango"
+        // El punto (.) no necesita escape dentro de []
+        .replace(/[. -]/g, ""); 
     };
 
     const terminoBusqueda = limpiar(searchTerm);
