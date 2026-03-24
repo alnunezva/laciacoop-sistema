@@ -176,23 +176,7 @@ function App() {
       });
     };
     input.click();
-  };
-
-// --- LÓGICA DE BÚSQUEDA INTELIGENTE POR PALABRAS ---
-  const sociosFiltrados = socios.filter(s => {
-    const limpiar = (texto) => {
-      if (!texto) return "";
-      return texto
-        .toString()
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[.\-]/g, ""); // Quitamos puntos y guiones, pero MANTENEMOS espacios aquí
-    };
-
-    const nombreSocio = limpiar(s.nombre);
-    const rutSocio = limpiar(s.rut).replace(/ /g, ""); // Al RUT le quitamos espacios
-    
+  };    
     // --- LÓGICA DE BÚSQUEDA INTELIGENTE POR PALABRAS (SIN ERRORES ESLINT) ---
   const sociosFiltrados = socios.filter(s => {
     const limpiar = (texto) => {
