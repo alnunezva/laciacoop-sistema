@@ -184,16 +184,16 @@ function App() {
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/deleteSocio?id=${socioSeleccionado.id}`, { method: 'DELETE' });
+      const response = await fetch(`/api/deleteSocio?id=${encodeURIComponent(socioSeleccionado.id)}`, { method: 'DELETE' });
       if (response.ok) {
         setSocios(socios.filter(s => s.id !== socioSeleccionado.id));
         setSocioSeleccionado(null);
         alert("🗑️ Socio eliminado con éxito.");
       } else {
-        alert("❌ No se pudo eliminar el socio.");
+        alert("❌ No se pudo eliminar el socio. Verifique permisos en Azure.");
       }
     } catch (error) {
-      alert("❌ Error de conexión.");
+      alert("❌ Error de conexión con la API.");
     } finally {
       setLoading(false);
     }
@@ -235,7 +235,7 @@ function App() {
   if (loading) return (
     <div style={centerStyle}>
       <div className="spinner"></div>
-      <p style={{ marginTop: '15px', fontWeight: '500' }}>Iniciando entorno seguro...</p>
+      <p style={{ marginTop: '15px', fontWeight: '500' }}>Procesando en la nube...</p>
     </div>
   );
 
@@ -260,18 +260,7 @@ function App() {
       
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div style={{ 
-            width: '65px', 
-            height: '65px', 
-            backgroundColor: 'white', 
-            borderRadius: '18px', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-            border: '1px solid #e2e8f0',
-            overflow: 'hidden'
-          }}>
+          <div style={{ width: '65px', height: '65px', backgroundColor: 'white', borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
             <img src="/logo_laciacoop.png" alt="Logo Corporativo LACIACOOP" style={{ width: '85%', height: 'auto', objectFit: 'contain' }} />
           </div>
           <div>
@@ -322,25 +311,26 @@ function App() {
         {socioSeleccionado && (
           <div style={{ ...panelStyle, borderTop: '8px solid #3b82f6', animation: 'slideIn 0.3s ease-out' }}>
             
-            {/* FILA SUPERIOR: NOMBRE, RUT Y BOTONES */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', gap: '20px', alignItems: 'end', marginBottom: '25px', borderBottom: '1px solid #f1f5f9', paddingBottom: '20px' }}>
-               <div>
-                <label style={labelStyle}>Nombre Completo</label>
-                <input style={inputEditStyle} value={socioSeleccionado.nombre || ""} onChange={(e) => setSocioSeleccionado({...socioSeleccionado, nombre: e.target.value})} />
-               </div>
-               <div>
-                <label style={labelStyle}>RUT</label>
-                <input style={inputEditStyle} value={socioSeleccionado.rut || ""} onChange={(e) => setSocioSeleccionado({...socioSeleccionado, rut: e.target.value})} />
-               </div>
-               <div style={{ display: 'flex', gap: '10px' }}>
-                  <button onClick={handleEliminarSocio} style={{ ...deleteSocioButtonStyle, flex: 1, padding: '12px' }}>🗑️ Eliminar</button>
-                  <button onClick={() => setSocioSeleccionado(null)} style={{ ...closeButtonStyle, flex: 1, padding: '12px' }}>✕ Cerrar</button>
-               </div>
+            {/* CABECERA: NOMBRE, RUT Y BOTONES EN DOS FILAS */}
+            <div style={{ marginBottom: '25px', borderBottom: '1px solid #f1f5f9', paddingBottom: '20px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px', marginBottom: '15px' }}>
+                <div>
+                  <label style={labelStyle}>Nombre Completo</label>
+                  <input style={inputEditStyle} value={socioSeleccionado.nombre || ""} onChange={(e) => setSocioSeleccionado({...socioSeleccionado, nombre: e.target.value})} />
+                </div>
+                <div>
+                  <label style={labelStyle}>RUT</label>
+                  <input style={inputEditStyle} value={socioSeleccionado.rut || ""} onChange={(e) => setSocioSeleccionado({...socioSeleccionado, rut: e.target.value})} />
+                </div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button onClick={handleEliminarSocio} style={{ ...deleteSocioButtonStyle, width: '160px', padding: '12px' }}>🗑️ Eliminar Socio</button>
+                <button onClick={() => setSocioSeleccionado(null)} style={{ ...closeButtonStyle, width: '160px', padding: '12px' }}>✕ Cerrar Ficha</button>
+              </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '40px' }}>
               <div>
-                {/* GRID DE DATOS PERSONALES EN 2 COLUMNAS */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
                    <div>
                     <label style={labelStyle}>Estado de Socio</label>
@@ -367,12 +357,10 @@ function App() {
                     <input type="date" style={inputEditStyle} value={socioSeleccionado.fechaIncorporacion || ""} onChange={(e) => setSocioSeleccionado({...socioSeleccionado, fechaIncorporacion: e.target.value})} />
                    </div>
                 </div>
-
                 <div style={{ marginBottom: '25px', padding: '15px', backgroundColor: '#f1f5f9', borderRadius: '12px' }}>
                     <label style={labelStyle}>Contratos Asociados (Separe por comas)</label>
                     <input placeholder="Ej: Contrato 2024-A, Anexo Agua..." style={inputEditStyle} value={socioSeleccionado.contratos ? socioSeleccionado.contratos.join(', ') : ""} onChange={(e) => { const lista = e.target.value.split(',').map(item => item.trim()); setSocioSeleccionado({...socioSeleccionado, contratos: lista}); }} />
                 </div>
-
                 <h4 style={sectionHeaderStyle}>📂 CARPETA DOCUMENTAL DIGITAL</h4>
                 <div style={{ backgroundColor: '#f8fafc', borderRadius: '16px', padding: '10px' }}>
                   {tiposDocumentos.map((doc, index) => {
@@ -396,62 +384,54 @@ function App() {
                   })}
                 </div>
               </div>
-
               <div style={{ borderLeft: '1px solid #e2e8f0', paddingLeft: '30px' }}>
                 <h4 style={sectionHeaderStyle}>📝 OBSERVACIONES ADMINISTRATIVAS</h4>
-                <textarea placeholder="Escriba aquí el historial de versiones..." style={textareaStyle} value={socioSeleccionado.observaciones || ""} onChange={(e) => setSocioSeleccionado({...socioSeleccionado, observaciones: e.target.value})} />
-                
+                <textarea placeholder="Escriba aquí..." style={textareaStyle} value={socioSeleccionado.observaciones || ""} onChange={(e) => setSocioSeleccionado({...socioSeleccionado, observaciones: e.target.value})} />
                 <div style={infoBoxStyle}>
                   <p style={{ margin: '0 0 10px 0', fontSize: '13px' }}><strong>Estado de Cuenta:</strong> Sin deudas</p>
                   <p style={{ margin: '0', fontSize: '13px' }}><strong>Última Factibilidad:</strong> Emitida 12/03/2024</p>
                 </div>
-
-                <button style={saveButtonStyle} onClick={() => {
-                  handleGuardar().then(success => success && alert("✅ Cambios guardados en la nube de LACIACOOP"));
-                }}>
-                  Guardar Cambios en Ficha
-                </button>
+                <button style={saveButtonStyle} onClick={() => handleGuardar().then(success => success && alert("✅ Cambios guardados en la nube"))}>Guardar Cambios en Ficha</button>
               </div>
             </div>
           </div>
         )}
       </div>
-
       <style>{` .row-hover:hover { background-color: #f8fafc !important; cursor: pointer; } .spinner { border: 4px solid rgba(0,0,0,.05); width: 40px; height: 40px; border-radius: 50%; border-left-color: #3b82f6; animation: spin 1s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } } @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } } `}</style>
     </div>
   );
 }
 
 const StatCard = ({ title, value, color, icon }) => (
-  <div style={{ background: 'white', padding: '16px', borderRadius: '16px', border: '1px solid #f1f5f9', textAlign: 'center' }}>
-    <div style={{ fontSize: '20px' }}>{icon}</div>
-    <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '700' }}>{title}</div>
+  <div style={{ background: 'white', padding: '16px', borderRadius: '16px', border: '1px solid #f1f5f9', textAlign: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+    <div style={{ fontSize: '20px', marginBottom: '5px' }}>{icon}</div>
+    <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase' }}>{title}</div>
     <div style={{ fontSize: '20px', fontWeight: '800', color }}>{value}</div>
   </div>
 );
 
 const centerStyle = { display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f8fafc' };
 const loginBgStyle = { height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#0f172a' };
-const loginCardStyle = { backgroundColor: 'white', padding: '60px', borderRadius: '40px', textAlign: 'center' };
-const loginButtonStyle = { display: 'flex', alignItems: 'center', background: '#0f172a', color: 'white', padding: '18px 30px', borderRadius: '18px', textDecoration: 'none' };
+const loginCardStyle = { backgroundColor: 'white', padding: '60px', borderRadius: '40px', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' };
+const loginButtonStyle = { display: 'flex', alignItems: 'center', background: '#0f172a', color: 'white', padding: '18px 30px', borderRadius: '18px', textDecoration: 'none', fontWeight: '700' };
 const logoutButtonStyle = { background: 'white', color: '#ef4444', border: '1px solid #fee2e2', padding: '10px 22px', borderRadius: '14px', cursor: 'pointer', fontWeight: '700' };
-const searchStyles = { width: '100%', padding: '18px 25px', borderRadius: '18px', border: '1px solid #e2e8f0', outline: 'none' };
-const panelStyle = { background: 'white', padding: '32px', borderRadius: '28px', border: '1px solid #f1f5f9' };
+const searchStyles = { width: '100%', padding: '18px 25px', borderRadius: '18px', border: '1px solid #e2e8f0', outline: 'none', fontSize: '16px', boxSizing: 'border-box' };
+const panelStyle = { background: 'white', padding: '32px', borderRadius: '28px', border: '1px solid #f1f5f9', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' };
 const tableStyle = { width: '100%', borderCollapse: 'collapse' };
-const thStyle = { textAlign: 'left', borderBottom: '2px solid #f1f5f9', color: '#94a3b8', fontSize: '11px' };
-const trStyle = { borderBottom: '1px solid #f1f5f9' };
-const closeButtonStyle = { backgroundColor: '#f1f5f9', border: 'none', borderRadius: '10px', color: '#475569', fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap' };
-const deleteSocioButtonStyle = { backgroundColor: '#fee2e2', border: '1px solid #ef4444', borderRadius: '10px', color: '#ef4444', fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap' };
-const sectionHeaderStyle = { fontSize: '12px', color: '#94a3b8', fontWeight: '700', marginBottom: '15px' };
+const thStyle = { textAlign: 'left', borderBottom: '2px solid #f1f5f9', color: '#94a3b8', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' };
+const trStyle = { borderBottom: '1px solid #f1f5f9', transition: 'all 0.2s' };
+const closeButtonStyle = { backgroundColor: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '12px', color: '#475569', fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap' };
+const deleteSocioButtonStyle = { backgroundColor: '#fee2e2', border: '1px solid #ef4444', borderRadius: '12px', color: '#ef4444', fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap' };
+const sectionHeaderStyle = { fontSize: '12px', color: '#94a3b8', fontWeight: '700', marginBottom: '15px', textTransform: 'uppercase' };
 const documentRowStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 15px', borderBottom: '1px solid #edf2f7' };
 const statusBadgeStyle = { padding: '5px 12px', borderRadius: '10px', fontSize: '11px', fontWeight: '800' };
-const uploadIconStyle = { background: 'white', border: '1px solid #e2e8f0', padding: '6px', cursor: 'pointer', borderRadius: '8px' };
-const actionIconStyle = { background: 'white', border: '1px solid #e2e8f0', padding: '6px', cursor: 'pointer', borderRadius: '8px' };
-const textareaStyle = { width: '100%', height: '180px', borderRadius: '18px', border: '1px solid #e2e8f0', padding: '15px', outline: 'none' };
-const infoBoxStyle = { marginTop: '20px', padding: '20px', background: '#eff6ff', borderRadius: '18px', border: '1px solid #dbeafe' };
-const saveButtonStyle = { marginTop: '20px', width: '100%', padding: '18px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '18px', fontWeight: '700', cursor: 'pointer' };
-const labelStyle = { display: 'block', fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '5px' };
-const inputEditStyle = { width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid #e2e8f0', outline: 'none' };
+const uploadIconStyle = { background: 'white', border: '1px solid #e2e8f0', padding: '8px', cursor: 'pointer', borderRadius: '8px' };
+const actionIconStyle = { background: 'white', border: '1px solid #e2e8f0', padding: '8px', cursor: 'pointer', borderRadius: '8px' };
+const textareaStyle = { width: '100%', height: '180px', borderRadius: '18px', border: '1px solid #e2e8f0', padding: '15px', outline: 'none', boxSizing: 'border-box', fontSize: '14px' };
+const infoBoxStyle = { marginTop: '20px', padding: '20px', background: '#eff6ff', borderRadius: '18px', border: '1px solid #dbeafe', color: '#1e40af' };
+const saveButtonStyle = { marginTop: '20px', width: '100%', padding: '18px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '18px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)' };
+const labelStyle = { display: 'block', fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '5px', textTransform: 'uppercase' };
+const inputEditStyle = { width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', outline: 'none', fontSize: '14px', boxSizing: 'border-box' };
 const importButtonStyle = { width: '100%', padding: '14px', background: 'white', border: '2px dashed #3b82f6', borderRadius: '16px', color: '#3b82f6', cursor: 'pointer', marginBottom: '30px', fontWeight: '700' };
 
 export default App;
