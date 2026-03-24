@@ -178,10 +178,26 @@ function App() {
     input.click();
   };
 
-  const sociosFiltrados = socios.filter(s => 
-    s.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    s.rut?.includes(searchTerm)
-  );
+// --- LÓGICA DE BÚSQUEDA INTELIGENTE ---
+  const sociosFiltrados = socios.filter(s => {
+    // 1. Función para limpiar texto (quita tildes, puntos, guiones y pasa a minúsculas)
+    const limpiar = (texto) => {
+      if (!texto) return "";
+      return texto
+        .toString()
+        .toLowerCase()
+        .normalize("NFD") // Separa las tildes de las letras
+        .replace(/[\u0300-\u036f]/g, "") // Elimina las tildes
+        .replace(/[\.\- ]/g, ""); // Elimina puntos, guiones y espacios
+    };
+
+    const terminoBusqueda = limpiar(searchTerm);
+    const nombreSocio = limpiar(s.nombre);
+    const rutSocio = limpiar(s.rut);
+
+    // 2. Comprobamos si el término está incluido en el nombre o en el RUT
+    return nombreSocio.includes(terminoBusqueda) || rutSocio.includes(terminoBusqueda);
+  });
 
   const stats = {
     total: socios.length,
