@@ -66,12 +66,13 @@ function App() {
           const result = await response.json();
           const socioActualizado = { ...socioSeleccionado };
           if (!socioActualizado.documentos) socioActualizado.documentos = {};
+          // Guardamos la URL (que ahora viene con token temporal)
           socioActualizado.documentos[docType] = { status: "Cargado", url: result.url };
 
           const guardadoExitoso = await handleGuardar(socioActualizado);
           if (guardadoExitoso) {
             setSocioSeleccionado(socioActualizado);
-            alert(`✅ ${docType} cargado y vinculado.`);
+            alert(`✅ ${docType} cargado y vinculado de forma segura.`);
           }
         }
       } catch (error) {
@@ -81,12 +82,32 @@ function App() {
     input.click();
   };
 
+  // --- NUEVA FUNCIÓN DE DESCARGA SEGURA (SAS TOKEN) ---
+  const handleDownload = async (docType) => {
+    try {
+      const docInfo = socioSeleccionado.documentos[docType];
+      // Extraemos la ruta del blob (socioId/tipo_archivo.pdf) desde la URL guardada
+      const blobPath = docInfo.url.split('/documentos-socios/')[1].split('?')[0];
+
+      const response = await fetch(`/api/getDocUrl?blobPath=${encodeURIComponent(blobPath)}`);
+      const data = await response.json();
+      
+      if (data.url) {
+        window.open(data.url, '_blank');
+      } else {
+        throw new Error("No se generó la URL");
+      }
+    } catch (error) {
+      alert("❌ Error: No se pudo generar el acceso seguro al documento.");
+    }
+  };
+
   const handleDelete = async (docType) => {
     if (!window.confirm(`¿Está seguro de eliminar el documento: ${docType}?`)) return;
 
     try {
       const docInfo = socioSeleccionado.documentos[docType];
-      const fileName = docInfo.url.split('/').pop().split('_').slice(1).join('_');
+      const fileName = docInfo.url.split('/').pop().split('_').slice(1).join('_').split('?')[0];
 
       const response = await fetch(`/api/deleteDoc?socioId=${socioSeleccionado.id}&docType=${encodeURIComponent(docType)}&fileName=${encodeURIComponent(fileName)}`, {
         method: 'DELETE'
@@ -241,7 +262,7 @@ function App() {
                           </span>
                           {status === "Cargado" ? (
                             <>
-                              <button style={actionIconStyle} onClick={() => window.open(socioSeleccionado.documentos[doc].url, '_blank')} title="Ver documento">👁️</button>
+                              <button style={actionIconStyle} onClick={() => handleDownload(doc)} title="Ver documento">👁️</button>
                               <button style={{...actionIconStyle, color: '#ef4444'}} onClick={() => handleDelete(doc)} title="Eliminar">🗑️</button>
                             </>
                           ) : (

@@ -1,5 +1,5 @@
 const { app } = require('@azure/functions');
-const { BlobServiceClient } = require('@azure/storage-blob');
+const { BlobServiceClient, StorageSharedKeyCredential, BlobSASPermissions, generateBlobSASQueryParameters } = require('@azure/storage-blob');
 
 app.http('uploadDoc', {
     methods: ['POST'],
@@ -8,31 +8,39 @@ app.http('uploadDoc', {
         const socioId = request.query.get('socioId');
         const docType = request.query.get('docType');
         const fileName = request.query.get('fileName');
-        
-        // El cuerpo en V4 se lee como ArrayBuffer para archivos
         const fileContent = await request.arrayBuffer();
 
-        if (!fileContent || !socioId || !docType) {
-            return { status: 400, body: "Faltan datos (socioId, docType o archivo)" };
-        }
-
         try {
-            const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
-            const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+            const connString = process.env.AZURE_STORAGE_CONNECTION_STRING;
+            const blobServiceClient = BlobServiceClient.fromConnectionString(connString);
             const containerClient = blobServiceClient.getContainerClient("documentos-socios");
-            
+            await containerClient.createIfNotExists();
+
             const blobName = `${socioId}/${docType}_${fileName}`;
             const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+            await blockBlobClient.uploadData(Buffer.from(fileContent));
 
-            await blockBlobClient.uploadData(fileContent);
-
-            return {
-                status: 200,
-                jsonBody: { message: "Archivo subido con éxito", url: blockBlobClient.url }
+            // --- GENERACIÓN DEL SAS TOKEN (EXPIRA EN 1 HORA) ---
+            const sasOptions = {
+                containerName: "documentos-socios",
+                blobName: blobName,
+                startsOn: new Date(),
+                expiresOn: new Date(new Date().valueOf() + 3600 * 1000), // 1 hora
+                permissions: BlobSASPermissions.parse("r") // Solo lectura
             };
+
+            // Extraemos los datos de la conexión para firmar
+            const parts = connString.split(';');
+            const accountName = parts.find(p => p.startsWith('AccountName=')).split('=')[1];
+            const accountKey = parts.find(p => p.startsWith('AccountKey=')).split('=')[1];
+            const sharedKeyCredential = new StorageSharedKeyCredential(accountName, accountKey);
+
+            const sasToken = generateBlobSASQueryParameters(sasOptions, sharedKeyCredential).toString();
+            const sasUrl = `${blockBlobClient.url}?${sasToken}`;
+
+            return { status: 200, jsonBody: { message: "Ok", url: sasUrl } };
         } catch (error) {
-            context.error("Error subiendo a Blob:", error);
-            return { status: 500, body: "Error interno al subir a Azure Storage" };
+            return { status: 500, body: error.message };
         }
     }
 });
