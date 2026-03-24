@@ -24,7 +24,7 @@ function App() {
       })
       .catch(() => setLoading(false));
 
-    fetch('/api/getSocios')
+    fetch(`/api/getSocios?t=${new Date().getTime()}`)
       .then(res => res.json())
       .then(data => setSocios(Array.isArray(data) ? data : []))
       .catch(err => console.error("Error API:", err));
