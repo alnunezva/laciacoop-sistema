@@ -212,17 +212,23 @@ function App() {
     return coincideNombre || coincideRut;
   });
 
-const stats = {
-    total: socios.length,
-    completos: socios.filter(s => {
-      // Un socio está al día solo si tiene el objeto documentos 
-      // y si tiene exactamente la misma cantidad de documentos cargados que tipos definidos
-      const docsCargados = s.documentos ? Object.values(s.documentos).filter(d => d.status === "Cargado").length : 0;
-      return docsCargados === tiposDocumentos.length;
-    }).length,
-    incompletos: 0 // Se calcula abajo
+const totalSocios = socios.length;
+  const sociosCompletos = socios.filter(s => {
+    // Si no tiene el objeto documentos, obviamente está incompleto
+    if (!s.documentos) return false;
+    
+    // Contamos cuántos documentos tienen el status "Cargado"
+    const cantidadCargados = Object.values(s.documentos).filter(d => d.status === "Cargado").length;
+    
+    // Está "Al Día" SOLO si tiene los 11 documentos cargados
+    return cantidadCargados === tiposDocumentos.length;
+  }).length;
+
+  const stats = {
+    total: totalSocios,
+    completos: sociosCompletos,
+    incompletos: totalSocios - sociosCompletos
   };
-  stats.incompletos = stats.total - stats.completos;
 
   const logout = () => {
     window.location.href = "/.auth/logout?post_logout_redirect_uri=/";
@@ -256,21 +262,26 @@ const stats = {
       
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          {/* LOGO DE LA EMPRESA */}
+          {/* CONTENEDOR DEL LOGO */}
           <div style={{ 
-            width: '60px', 
-            height: '60px', 
-            backgroundColor: '#3b82f6', 
-            borderRadius: '15px', 
+            width: '65px', 
+            height: '65px', 
+            backgroundColor: 'white', 
+            borderRadius: '18px', 
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center',
-            fontSize: '30px',
-            boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+            border: '1px solid #e2e8f0',
+            overflow: 'hidden'
           }}>
-            {/* Si tienes una URL de imagen, reemplaza el 🚜 por: <img src="URL_LOGO" style={{width: '80%'}} /> */}
-           <img src="https://www.cooplacia.cl/cliente/img/logo_20240123224646.png" style={{width: '80%'}} /> 
+            <img 
+              src="/logo_laciacoop.png" 
+              alt="Logo LACIACOOP" 
+              style={{ width: '85%', height: 'auto', objectFit: 'contain' }} 
+            />
           </div>
+
           <div>
             <h1 style={{ color: '#0f172a', margin: 0, fontSize: '32px', fontWeight: '800', letterSpacing: '-0.5px' }}>Gestión de Socios</h1>
             <p style={{ color: '#64748b', margin: '5px 0 0 0', display: 'flex', alignItems: 'center' }}>
