@@ -321,45 +321,58 @@ function App() {
 
         {socioSeleccionado && (
           <div style={{ ...panelStyle, borderTop: '8px solid #3b82f6', animation: 'slideIn 0.3s ease-out' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '30px' }}>
-              <div style={{ width: '100%' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1.5fr', gap: '15px', alignItems: 'end' }}>
+            
+            {/* FILA SUPERIOR: NOMBRE, RUT Y BOTONES */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', gap: '20px', alignItems: 'end', marginBottom: '25px', borderBottom: '1px solid #f1f5f9', paddingBottom: '20px' }}>
+               <div>
+                <label style={labelStyle}>Nombre Completo</label>
+                <input style={inputEditStyle} value={socioSeleccionado.nombre || ""} onChange={(e) => setSocioSeleccionado({...socioSeleccionado, nombre: e.target.value})} />
+               </div>
+               <div>
+                <label style={labelStyle}>RUT</label>
+                <input style={inputEditStyle} value={socioSeleccionado.rut || ""} onChange={(e) => setSocioSeleccionado({...socioSeleccionado, rut: e.target.value})} />
+               </div>
+               <div style={{ display: 'flex', gap: '10px' }}>
+                  <button onClick={handleEliminarSocio} style={{ ...deleteSocioButtonStyle, flex: 1, padding: '12px' }}>🗑️ Eliminar</button>
+                  <button onClick={() => setSocioSeleccionado(null)} style={{ ...closeButtonStyle, flex: 1, padding: '12px' }}>✕ Cerrar</button>
+               </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '40px' }}>
+              <div>
+                {/* GRID DE DATOS PERSONALES EN 2 COLUMNAS */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
                    <div>
-                    <label style={labelStyle}>Nombre Completo</label>
-                    <input style={inputEditStyle} value={socioSeleccionado.nombre || ""} onChange={(e) => setSocioSeleccionado({...socioSeleccionado, nombre: e.target.value})} />
-                   </div>
-                   <div>
-                    <label style={labelStyle}>RUT</label>
-                    <input style={inputEditStyle} value={socioSeleccionado.rut || ""} onChange={(e) => setSocioSeleccionado({...socioSeleccionado, rut: e.target.value})} />
-                   </div>
-                   <div>
-                    <label style={labelStyle}>Estado</label>
+                    <label style={labelStyle}>Estado de Socio</label>
                     <select style={inputEditStyle} value={socioSeleccionado.estado || "Activo"} onChange={(e) => setSocioSeleccionado({...socioSeleccionado, estado: e.target.value})}>
                         <option value="Activo">🟢 Activo</option>
                         <option value="Suspendido">🟡 Suspendido</option>
                         <option value="Retirado">🔴 Retirado</option>
                     </select>
                    </div>
-                   <div style={{ display: 'flex', gap: '8px', height: '40px' }}>
-                      <button onClick={handleEliminarSocio} style={{ ...deleteSocioButtonStyle, flex: 1, padding: '0 10px', fontSize: '12px' }}>🗑️ Eliminar</button>
-                      <button onClick={() => setSocioSeleccionado(null)} style={{ ...closeButtonStyle, flex: 1, padding: '0 10px', fontSize: '12px' }}>✕ Cerrar</button>
+                   <div>
+                    <label style={labelStyle}>Teléfono</label>
+                    <input style={inputEditStyle} value={socioSeleccionado.telefono || ""} onChange={(e) => setSocioSeleccionado({...socioSeleccionado, telefono: e.target.value})} />
+                   </div>
+                   <div style={{ gridColumn: 'span 2' }}>
+                    <label style={labelStyle}>Dirección</label>
+                    <input style={inputEditStyle} value={socioSeleccionado.direccion || ""} onChange={(e) => setSocioSeleccionado({...socioSeleccionado, direccion: e.target.value})} />
+                   </div>
+                   <div>
+                    <label style={labelStyle}>Correo Electrónico</label>
+                    <input style={inputEditStyle} value={socioSeleccionado.email || ""} onChange={(e) => setSocioSeleccionado({...socioSeleccionado, email: e.target.value})} />
+                   </div>
+                   <div>
+                    <label style={labelStyle}>Fecha Incorporación</label>
+                    <input type="date" style={inputEditStyle} value={socioSeleccionado.fechaIncorporacion || ""} onChange={(e) => setSocioSeleccionado({...socioSeleccionado, fechaIncorporacion: e.target.value})} />
                    </div>
                 </div>
-              </div>
-            </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '40px' }}>
-              <div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
-                   <div><label style={labelStyle}>Dirección</label><input style={inputEditStyle} value={socioSeleccionado.direccion || ""} onChange={(e) => setSocioSeleccionado({...socioSeleccionado, direccion: e.target.value})} /></div>
-                   <div><label style={labelStyle}>Teléfono</label><input style={inputEditStyle} value={socioSeleccionado.telefono || ""} onChange={(e) => setSocioSeleccionado({...socioSeleccionado, telefono: e.target.value})} /></div>
-                   <div><label style={labelStyle}>Correo Electrónico</label><input style={inputEditStyle} value={socioSeleccionado.email || ""} onChange={(e) => setSocioSeleccionado({...socioSeleccionado, email: e.target.value})} /></div>
-                   <div><label style={labelStyle}>Fecha Incorporación</label><input type="date" style={inputEditStyle} value={socioSeleccionado.fechaIncorporacion || ""} onChange={(e) => setSocioSeleccionado({...socioSeleccionado, fechaIncorporacion: e.target.value})} /></div>
-                </div>
-                <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f1f5f9', borderRadius: '12px' }}>
+                <div style={{ marginBottom: '25px', padding: '15px', backgroundColor: '#f1f5f9', borderRadius: '12px' }}>
                     <label style={labelStyle}>Contratos Asociados (Separe por comas)</label>
                     <input placeholder="Ej: Contrato 2024-A, Anexo Agua..." style={inputEditStyle} value={socioSeleccionado.contratos ? socioSeleccionado.contratos.join(', ') : ""} onChange={(e) => { const lista = e.target.value.split(',').map(item => item.trim()); setSocioSeleccionado({...socioSeleccionado, contratos: lista}); }} />
                 </div>
+
                 <h4 style={sectionHeaderStyle}>📂 CARPETA DOCUMENTAL DIGITAL</h4>
                 <div style={{ backgroundColor: '#f8fafc', borderRadius: '16px', padding: '10px' }}>
                   {tiposDocumentos.map((doc, index) => {
@@ -383,19 +396,27 @@ function App() {
                   })}
                 </div>
               </div>
+
               <div style={{ borderLeft: '1px solid #e2e8f0', paddingLeft: '30px' }}>
                 <h4 style={sectionHeaderStyle}>📝 OBSERVACIONES ADMINISTRATIVAS</h4>
-                <textarea placeholder="Escriba aquí..." style={textareaStyle} value={socioSeleccionado.observaciones || ""} onChange={(e) => setSocioSeleccionado({...socioSeleccionado, observaciones: e.target.value})} />
+                <textarea placeholder="Escriba aquí el historial de versiones..." style={textareaStyle} value={socioSeleccionado.observaciones || ""} onChange={(e) => setSocioSeleccionado({...socioSeleccionado, observaciones: e.target.value})} />
+                
                 <div style={infoBoxStyle}>
                   <p style={{ margin: '0 0 10px 0', fontSize: '13px' }}><strong>Estado de Cuenta:</strong> Sin deudas</p>
                   <p style={{ margin: '0', fontSize: '13px' }}><strong>Última Factibilidad:</strong> Emitida 12/03/2024</p>
                 </div>
-                <button style={saveButtonStyle} onClick={() => handleGuardar().then(success => success && alert("✅ Cambios guardados"))}>Guardar Cambios</button>
+
+                <button style={saveButtonStyle} onClick={() => {
+                  handleGuardar().then(success => success && alert("✅ Cambios guardados en la nube de LACIACOOP"));
+                }}>
+                  Guardar Cambios en Ficha
+                </button>
               </div>
             </div>
           </div>
         )}
       </div>
+
       <style>{` .row-hover:hover { background-color: #f8fafc !important; cursor: pointer; } .spinner { border: 4px solid rgba(0,0,0,.05); width: 40px; height: 40px; border-radius: 50%; border-left-color: #3b82f6; animation: spin 1s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } } @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } } `}</style>
     </div>
   );
