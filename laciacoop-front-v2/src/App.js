@@ -212,11 +212,17 @@ function App() {
     return coincideNombre || coincideRut;
   });
 
-  const stats = {
+const stats = {
     total: socios.length,
-    completos: socios.filter(s => s.documentos && Object.values(s.documentos).every(d => d.status === "Cargado")).length,
-    incompletos: socios.length - socios.filter(s => s.documentos && Object.values(s.documentos).every(d => d.status === "Cargado")).length
+    completos: socios.filter(s => {
+      // Un socio está al día solo si tiene el objeto documentos 
+      // y si tiene exactamente la misma cantidad de documentos cargados que tipos definidos
+      const docsCargados = s.documentos ? Object.values(s.documentos).filter(d => d.status === "Cargado").length : 0;
+      return docsCargados === tiposDocumentos.length;
+    }).length,
+    incompletos: 0 // Se calcula abajo
   };
+  stats.incompletos = stats.total - stats.completos;
 
   const logout = () => {
     window.location.href = "/.auth/logout?post_logout_redirect_uri=/";
@@ -249,12 +255,29 @@ function App() {
     <div style={{ padding: '40px', backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: "'Inter', sans-serif" }}>
       
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
-        <div>
-          <h1 style={{ color: '#0f172a', margin: 0, fontSize: '32px', fontWeight: '800', letterSpacing: '-0.5px' }}>Gestión de Socios</h1>
-          <p style={{ color: '#64748b', margin: '5px 0 0 0', display: 'flex', alignItems: 'center' }}>
-            <span style={{ width: '10px', height: '10px', backgroundColor: '#10b981', borderRadius: '50%', marginRight: '10px' }}></span>
-            Conectado como: <strong style={{ marginLeft: '5px', color: '#334155' }}>{userInfo.userDetails}</strong>
-          </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          {/* LOGO DE LA EMPRESA */}
+          <div style={{ 
+            width: '60px', 
+            height: '60px', 
+            backgroundColor: '#3b82f6', 
+            borderRadius: '15px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            fontSize: '30px',
+            boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+          }}>
+            {/* Si tienes una URL de imagen, reemplaza el 🚜 por: <img src="URL_LOGO" style={{width: '80%'}} /> */}
+           <img src="https://www.cooplacia.cl/cliente/img/logo_20240123224646.png" style={{width: '80%'}} /> 
+          </div>
+          <div>
+            <h1 style={{ color: '#0f172a', margin: 0, fontSize: '32px', fontWeight: '800', letterSpacing: '-0.5px' }}>Gestión de Socios</h1>
+            <p style={{ color: '#64748b', margin: '5px 0 0 0', display: 'flex', alignItems: 'center' }}>
+              <span style={{ width: '10px', height: '10px', backgroundColor: '#10b981', borderRadius: '50%', marginRight: '10px' }}></span>
+              Conectado como: <strong style={{ marginLeft: '5px', color: '#334155' }}>{userInfo.userDetails}</strong>
+            </p>
+          </div>
         </div>
         <button onClick={logout} style={logoutButtonStyle}>Cerrar Sesión</button>
       </div>
@@ -277,7 +300,7 @@ function App() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', marginBottom: '15px' }}>
                 <StatCard title="Total" value={stats.total} color="#3b82f6" icon="👥" />
                 <StatCard title="Al Día" value={stats.completos} color="#10b981" icon="✅" />
-                <StatCard title="Pend." value={stats.incompletos} color="#f59e0b" icon="⚠️" />
+                <StatCard title="Documento pendiente" value={stats.incompletos} color="#f59e0b" icon="⚠️" />
               </div>
               <button onClick={handleImportCSV} style={importButtonStyle}>📥 IMPORTACIÓN MASIVA (CSV)</button>
             </>
