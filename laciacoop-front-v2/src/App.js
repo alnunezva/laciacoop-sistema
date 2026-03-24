@@ -178,27 +178,34 @@ function App() {
     input.click();
   };
 
-// --- LÓGICA DE BÚSQUEDA INTELIGENTE ---
+// --- LÓGICA DE BÚSQUEDA INTELIGENTE POR PALABRAS ---
   const sociosFiltrados = socios.filter(s => {
-    // 1. Función para limpiar texto (quita tildes, puntos, guiones y pasa a minúsculas)
     const limpiar = (texto) => {
       if (!texto) return "";
       return texto
         .toString()
         .toLowerCase()
-        .normalize("NFD") 
-        .replace(/[\u0300-\u036f]/g, "") 
-        // El guion (-) DEBE ir al final o al principio para no ser un "rango"
-        // El punto (.) no necesita escape dentro de []
-        .replace(/[. -]/g, ""); 
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[.\-]/g, ""); // Quitamos puntos y guiones, pero MANTENEMOS espacios aquí
     };
 
-    const terminoBusqueda = limpiar(searchTerm);
     const nombreSocio = limpiar(s.nombre);
-    const rutSocio = limpiar(s.rut);
+    const rutSocio = limpiar(s.rut).replace(/ /g, ""); // Al RUT le quitamos espacios
+    
+    // 1. Dividimos tu búsqueda en palabras (ej: ["raul", "nunez"])
+    const palabrasBusqueda = limpiar(searchTerm).split(" ").filter(p => p !== "");
 
-    // 2. Comprobamos si el término está incluido en el nombre o en el RUT
-    return nombreSocio.includes(terminoBusqueda) || rutSocio.includes(terminoBusqueda);
+    if (palabrasBusqueda.length === 0) return true;
+
+    // 2. Verificamos el RUT (coincidencia simple)
+    const coincideRut = rutSocio.includes(palabrasBusqueda.join(""));
+
+    // 3. Verificamos el NOMBRE (Cada palabra buscada debe estar en el nombre)
+    // Esto permite saltarse el segundo nombre o apellidos intermedios
+    const coincideNombre = palabrasBusqueda.every(palabra => nombreSocio.includes(palabra));
+
+    return coincideNombre || coincideRut;
   });
 
   const stats = {
