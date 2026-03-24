@@ -25,9 +25,15 @@ function App() {
       .catch(() => setLoading(false));
 
     fetch(`/api/getSocios?t=${new Date().getTime()}`)
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error("Error red");
+        return res.json();
+      })
       .then(data => setSocios(Array.isArray(data) ? data : []))
-      .catch(err => console.error("Error API:", err));
+      .catch(err => {
+        console.error("Error API:", err);
+        setSocios([]); 
+      });
   }, []);
 
   const handleGuardar = async (socioAActualizar = socioSeleccionado) => {
@@ -260,7 +266,18 @@ function App() {
       
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div style={{ width: '65px', height: '65px', backgroundColor: 'white', borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+          <div style={{ 
+            width: '65px', 
+            height: '65px', 
+            backgroundColor: 'white', 
+            borderRadius: '18px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+            border: '1px solid #e2e8f0',
+            overflow: 'hidden'
+          }}>
             <img src="/logo_laciacoop.png" alt="Logo Corporativo LACIACOOP" style={{ width: '85%', height: 'auto', objectFit: 'contain' }} />
           </div>
           <div>
@@ -311,7 +328,6 @@ function App() {
         {socioSeleccionado && (
           <div style={{ ...panelStyle, borderTop: '8px solid #3b82f6', animation: 'slideIn 0.3s ease-out' }}>
             
-            {/* CABECERA: NOMBRE, RUT Y BOTONES EN DOS FILAS */}
             <div style={{ marginBottom: '25px', borderBottom: '1px solid #f1f5f9', paddingBottom: '20px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px', marginBottom: '15px' }}>
                 <div>
@@ -415,7 +431,7 @@ const loginBgStyle = { height: '100vh', display: 'flex', justifyContent: 'center
 const loginCardStyle = { backgroundColor: 'white', padding: '60px', borderRadius: '40px', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' };
 const loginButtonStyle = { display: 'flex', alignItems: 'center', background: '#0f172a', color: 'white', padding: '18px 30px', borderRadius: '18px', textDecoration: 'none', fontWeight: '700' };
 const logoutButtonStyle = { background: 'white', color: '#ef4444', border: '1px solid #fee2e2', padding: '10px 22px', borderRadius: '14px', cursor: 'pointer', fontWeight: '700' };
-const searchStyles = { width: '100%', padding: '18px 25px', borderRadius: '18px', border: '1px solid #e2e8f0', outline: 'none', fontSize: '16px', boxSizing: 'border-box' };
+const searchStyles = { width: '100%', padding: '18px 25px', borderRadius: '18px', border: '1px solid #e2e8f0', outline: 'none', fontSize: '16px', boxSizing: 'border-box', marginBottom: '20px' };
 const panelStyle = { background: 'white', padding: '32px', borderRadius: '28px', border: '1px solid #f1f5f9', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' };
 const tableStyle = { width: '100%', borderCollapse: 'collapse' };
 const thStyle = { textAlign: 'left', borderBottom: '2px solid #f1f5f9', color: '#94a3b8', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' };
