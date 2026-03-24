@@ -15,8 +15,8 @@ app.http('getSocios', {
             const container = database.container("Socios");
 
             const { resources: socios } = await container.items
-            .query("SELECT c.id, c.nombre, c.rut, c.documentos FROM c")
-            .fetchAll();
+                .query("SELECT * FROM c")
+                .fetchAll();
 
             return { 
                 status: 200, 
