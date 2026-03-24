@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import Papa from 'papaparse'; // Asegúrate de instalarlo: npm install papaparse
+import Papa from 'papaparse'; 
 
 function App() {
   const [socios, setSocios] = useState([]);
@@ -116,7 +116,6 @@ function App() {
     }
   };
 
-  // --- NUEVA FUNCIÓN DE IMPORTACIÓN MASIVA ---
   const handleImportCSV = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -176,8 +175,9 @@ function App() {
       });
     };
     input.click();
-  };    
-    // --- LÓGICA DE BÚSQUEDA INTELIGENTE POR PALABRAS (SIN ERRORES ESLINT) ---
+  }; 
+
+  // --- LÓGICA DE BÚSQUEDA INTELIGENTE ÚNICA ---
   const sociosFiltrados = socios.filter(s => {
     const limpiar = (texto) => {
       if (!texto) return "";
@@ -186,41 +186,30 @@ function App() {
         .toLowerCase()
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
-        // Eliminamos puntos. El guion al final de [] NO necesita barra \
         .replace(/[.-]/g, ""); 
     };
 
-    // Limpiamos nombre y rut del socio
     const nombreSocio = limpiar(s.nombre);
-    // Para el RUT quitamos también los espacios
     const rutSocio = limpiar(s.rut).replace(/\s/g, ""); 
     
-    // 1. Dividimos tu búsqueda en palabras limpias
     const terminos = searchTerm.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     const palabrasBusqueda = terminos.split(/\s+/).filter(p => p !== "");
 
     if (palabrasBusqueda.length === 0) return true;
 
-    // 2. ¿Coincide con el RUT? (Búsqueda simple del string completo de búsqueda en el RUT)
-    const busquedaLimpiaParaRut = terminos.replace(/[.\-\s]/g, "");
+    const busquedaLimpiaParaRut = terminos.replace(/[.\s-]/g, "");
     const coincideRut = rutSocio.includes(busquedaLimpiaParaRut);
 
-    // 3. ¿Coincide con el NOMBRE? (Cada palabra buscada debe estar en el nombre)
-    // Esto permite buscar "Raul Nuñez" y encontrar "Raul Enrique Nuñez Arias"
     const coincideNombre = palabrasBusqueda.every(palabra => nombreSocio.includes(palabra));
 
     return coincideNombre || coincideRut;
   });
 
-const totalSocios = socios.length;
+  // --- ESTADÍSTICAS CORREGIDAS ---
+  const totalSocios = socios.length;
   const sociosCompletos = socios.filter(s => {
-    // Si no tiene el objeto documentos, obviamente está incompleto
     if (!s.documentos) return false;
-    
-    // Contamos cuántos documentos tienen el status "Cargado"
     const cantidadCargados = Object.values(s.documentos).filter(d => d.status === "Cargado").length;
-    
-    // Está "Al Día" SOLO si tiene los 11 documentos cargados
     return cantidadCargados === tiposDocumentos.length;
   }).length;
 
@@ -262,7 +251,6 @@ const totalSocios = socios.length;
       
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          {/* CONTENEDOR DEL LOGO */}
           <div style={{ 
             width: '65px', 
             height: '65px', 
@@ -277,7 +265,7 @@ const totalSocios = socios.length;
           }}>
             <img 
               src="/logo_laciacoop.png" 
-              alt="Logo LACIACOOP" 
+              alt="Logo Corporativo LACIACOOP" 
               style={{ width: '85%', height: 'auto', objectFit: 'contain' }} 
             />
           </div>
