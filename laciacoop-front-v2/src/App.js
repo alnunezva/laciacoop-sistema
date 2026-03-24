@@ -353,6 +353,7 @@ function App() {
                         <option value="Retirado">🔴 Retirado</option>
                     </select>
                    </div>
+                   <button onClick={handleEliminarSocio} style={deleteSocioButtonStyle}>🗑️ Eliminar Socio</button>
                    <button onClick={() => setSocioSeleccionado(null)} style={closeButtonStyle}>✕ Cerrar Ficha</button>
                 </div>
               </div>
@@ -462,6 +463,36 @@ const StatCard = ({ title, value, color, icon }) => (
     <div style={{ fontSize: '20px', fontWeight: '800', color: color }}>{value}</div>
   </div>
 );
+const handleEliminarSocio = async () => {
+    if (!socioSeleccionado) return;
+    
+    const confirmacion = window.confirm(
+      `⚠️ ¿ESTÁ SEGURO? Esta acción eliminará a ${socioSeleccionado.nombre} y TODOS sus datos de forma permanente.`
+    );
+
+    if (!confirmacion) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/deleteSocio?id=${socioSeleccionado.id}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        // Actualizamos la lista local quitando al socio
+        setSocios(socios.filter(s => s.id !== socioSeleccionado.id));
+        setSocioSeleccionado(null);
+        alert("🗑️ Socio eliminado con éxito.");
+      } else {
+        alert("❌ No se pudo eliminar el socio.");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("❌ Error de conexión.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
 const centerStyle = { display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f8fafc' };
 const loginBgStyle = { height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' };
@@ -485,5 +516,6 @@ const saveButtonStyle = { marginTop: '20px', width: '100%', padding: '18px', bac
 const labelStyle = { display: 'block', fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', marginBottom: '5px', marginLeft: '2px' };
 const inputEditStyle = { width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '14px', color: '#1e293b', outline: 'none', backgroundColor: 'white', boxSizing: 'border-box' };
 const importButtonStyle = { width: '100%', padding: '14px', backgroundColor: '#ffffff', border: '2px dashed #3b82f6', borderRadius: '16px', color: '#3b82f6', fontWeight: '800', fontSize: '13px', cursor: 'pointer', marginBottom: '30px', transition: 'all 0.2s ease', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' };
-
+const deleteSocioButtonStyle = { backgroundColor: '#fee2e2', border: '1px solid #ef4444', padding: '8px 16px', borderRadius: '10px', color: '#ef4444', fontWeight: '700', cursor: 'pointer', height: 'fit-content', alignSelf: 'end' 
+};
 export default App;
