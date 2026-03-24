@@ -193,16 +193,36 @@ function App() {
     const nombreSocio = limpiar(s.nombre);
     const rutSocio = limpiar(s.rut).replace(/ /g, ""); // Al RUT le quitamos espacios
     
-    // 1. Dividimos tu búsqueda en palabras (ej: ["raul", "nunez"])
-    const palabrasBusqueda = limpiar(searchTerm).split(" ").filter(p => p !== "");
+    // --- LÓGICA DE BÚSQUEDA INTELIGENTE POR PALABRAS (SIN ERRORES ESLINT) ---
+  const sociosFiltrados = socios.filter(s => {
+    const limpiar = (texto) => {
+      if (!texto) return "";
+      return texto
+        .toString()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        // Eliminamos puntos. El guion al final de [] NO necesita barra \
+        .replace(/[.-]/g, ""); 
+    };
+
+    // Limpiamos nombre y rut del socio
+    const nombreSocio = limpiar(s.nombre);
+    // Para el RUT quitamos también los espacios
+    const rutSocio = limpiar(s.rut).replace(/\s/g, ""); 
+    
+    // 1. Dividimos tu búsqueda en palabras limpias
+    const terminos = searchTerm.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const palabrasBusqueda = terminos.split(/\s+/).filter(p => p !== "");
 
     if (palabrasBusqueda.length === 0) return true;
 
-    // 2. Verificamos el RUT (coincidencia simple)
-    const coincideRut = rutSocio.includes(palabrasBusqueda.join(""));
+    // 2. ¿Coincide con el RUT? (Búsqueda simple del string completo de búsqueda en el RUT)
+    const busquedaLimpiaParaRut = terminos.replace(/[.\-\s]/g, "");
+    const coincideRut = rutSocio.includes(busquedaLimpiaParaRut);
 
-    // 3. Verificamos el NOMBRE (Cada palabra buscada debe estar en el nombre)
-    // Esto permite saltarse el segundo nombre o apellidos intermedios
+    // 3. ¿Coincide con el NOMBRE? (Cada palabra buscada debe estar en el nombre)
+    // Esto permite buscar "Raul Nuñez" y encontrar "Raul Enrique Nuñez Arias"
     const coincideNombre = palabrasBusqueda.every(palabra => nombreSocio.includes(palabra));
 
     return coincideNombre || coincideRut;
